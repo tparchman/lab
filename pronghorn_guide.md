@@ -74,11 +74,13 @@ To figure out which channel and which version of a given software you want to in
 Below will install the most current version of bwa available from `bioconda`
 
     $ conda install -c bioconda bwa
-    $ conda install -c bioconda samtools
-    $ conda install -c bioconda bcftools
+    $ conda install -c bioconda samtools=1.10
+    $ conda install -c bioconda bcftools=1.10
     $ conda install -c bioconda vcftools
 
 ## conda software uninstalls
+
+    $ conda uninstall packagename
 
 ## removing anaconda environment
 
