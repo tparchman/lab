@@ -104,3 +104,5 @@ Below will install the most current version of bwa available from `bioconda`
  ### killing jobs
  
  ### some things NOT to do on pronghorn (personal accounts of fuck-ups)
+
+ 
