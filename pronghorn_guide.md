@@ -100,9 +100,19 @@ Below will install the most current version of bwa available from `bioconda`
  ### executing `slurm` wrapper
  
  ### monitoring your jobs
- 
- ### killing jobs
+ To check status after job is started
+
+    $ squeue -u tparchman
+
+To check status with info on cpus
+
+    $   scontrol show job -d <JOBID>
+
+To kill job:
+
+    $ scancel <JOBID>
+
  
  ### some things NOT to do on pronghorn (personal accounts of fuck-ups)
 
- 
+
