@@ -1,6 +1,6 @@
-## General notes on pronghorn usage
+# General notes on pronghorn usage
 
-### Where to work on pronghorn
+## Where to work on pronghorn
 
 For most of parchman lab work, things should be stored and worked on from:
 
@@ -12,7 +12,7 @@ Files can be easily moved to or from here using scp or rsync.
 
     $ rsync -av muricata_fastqs tparchman@pronghorn.rc.unr.edu:/data/gpfs/assoc/parchmanlab/parchman/
 
-### Containers or environments for managing software
+## Containers or environments for managing software
 
 Containers or environments must be used on pronghorn to install and run user specific software. Using such tools means that you can control your own portable environment, and that individual users do not have to install software more generally on the system. In the parchman lab we have been using `anaconda` environments for this. Many others are using `singularity` containers.
 
@@ -49,7 +49,7 @@ To activate conda either logout/log back in or:
 
 NOTE: may need to modify .condarc in order to move conda-forge and bioconda to top of list
 
-## activating and deactivating environment
+### activating and deactivating environment
 
 %need a few sentences describing [base], how to deactivate out of base, how to activate back into base, the difference between base and your environment.
 
@@ -65,7 +65,7 @@ To deactivate an active environment, use
 
 Note, if you deactivate after activating your named environment, you can deactivate out of base using the same command.
 
-## conda software installs
+### conda software installs
 
 Paragraph about considerations before choosing which version of what to install.
 
@@ -78,7 +78,7 @@ Below will install the most current version of bwa available from `bioconda`
     $ conda install -c bioconda bcftools=1.10
     $ conda install -c bioconda vcftools
 
-## conda software uninstalls
+### conda software uninstalls
 
     $ conda uninstall packagename
 
@@ -90,3 +90,17 @@ Below will install the most current version of bwa available from `bioconda`
 ### Building additional environments to keep dependencies clean
 
  You will likely want to build different conda environments for different software installs to keep dependencies clean. `Ipyrad` is an example of where we have built separate environments.
+ 
+ ## running jobs through the queue on pronghorn using `slurm`
+ 
+ ### different resources for parchman lab on pronghorn, both free and not so free
+ 
+ ### anatomy of a slurm wrapper
+ 
+ ### executing `slurm` wrapper
+ 
+ ### monitoring your jobs
+ 
+ ### killing jobs
+ 
+ 
