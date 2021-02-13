@@ -56,8 +56,8 @@ Slurm is an open source, fault-tolerant, and highly scalable cluster management 
 #SBATCH --cpus-per-task=32
 #SBATCH --hint=compute_bound
 #SBATCH --mem-per-cpu=2400
-#SBATCH --job-name=thamnophis_exabayes_threading_80
-#SBATCH --output=output_thamnophis_exabayes_threading_80.txt
+#SBATCH --job-name=
+#SBATCH --output=
 ```
 
 Common Slurm Commands
