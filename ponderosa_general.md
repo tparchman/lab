@@ -14,3 +14,19 @@ We are backing this entire directory up to multiple other destinations, so thing
 
 ## General notes on running jobs
 
+Ponderosa has 32 cores, 512 GB of RAM, and 10TB of local storage. This means read and write operations for working on ponderosa should be faster for data stored locally. For this reason, we use the directory `/working` to store data for active projects. As 10TB is not a big amount of disc space, please keep your directories within `/working` as tidy as possible:
+
+- keep all `.fastq` files compressed whenever they are not being actively used.
+- delete all `.sam` and `.bam` files when you are done processing them. These especially end up taking up enormous amounts of space.
+- constantly monitor the size and content of your directories with;
+    $ du -h
+
+Every user automatically has a home directory located in `~/home/username`
+
+## General useful commands for keeping on top of shit
+
+To look at disc space (total, avialable, and used):
+
+    $ df -h
+
+
