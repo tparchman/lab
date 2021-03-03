@@ -19,9 +19,9 @@ Ponderosa has 32 cores, 512 GB of RAM, and 10TB of local storage. This means rea
 - keep all `.fastq` files compressed whenever they are not being actively used.
 - delete all `.sam` and `.bam` files when you are done processing them. These especially end up taking up enormous amounts of space.
 - constantly monitor the size and content of your directories with:
-
+```
     $ du -h
-
+```
 Every user automatically has a home directory located in `~/home/username`
 
 ## Software installs and modules
@@ -49,6 +49,10 @@ Anytime the system appears to be down, or you can not log in, immediately contac
 To look at disc space (total, avialable, and used):
 
     $ df -h
+
+Monitor disc usage
+
+    $ du h 
 
 To check the usage for each user within a certain directory
 
