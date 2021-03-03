@@ -24,7 +24,27 @@ Ponderosa has 32 cores, 512 GB of RAM, and 10TB of local storage. This means rea
 
 Every user automatically has a home directory located in `~/home/username`
 
-### General useful commands for keeping on top of shit
+## Software installs and modules
+
+Software installed and compiled at the system level by system administrator (Mike Zierten, mzierten@unr.edu) or Parchman is maintained in a module library. If you need something installed that is not already at the system level, contact Tom and Mike Zierten, and forward a link to the specific software you need installed. Mike gets pulled on by a lot of people in a lot of different directions, so keep that in mind if you ever need his help. He is an extremely nice guy, but please be organized to save him time, and make sure he knows how much we appreciate him.
+
+To view software modules available:
+
+    $ module avail
+
+To load a module so that you can use the software:
+
+    $ module load name_of_module
+
+For example, to load bwa/0.7.8
+
+    $ module load bwa/0.7.8
+    
+## Emergencies?
+
+Anytime the system appears to be down, or you can not log in, immediately contact Tom or, if necessary, Mike Zierten. Mike is the College of Science system administrator for research computing, and he helps us keep things stable.
+
+## General useful commands for keeping on top of shit
 
 To look at disc space (total, avialable, and used):
 
