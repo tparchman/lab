@@ -73,29 +73,34 @@ Killing all jobs by user (only for those with sudo)
 
 ## Setting up ssh so that you dont have to use a password
 
-When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you are prompted for a password. Because you are doing this many times a day, this is annoying. It is also not necessary. By carefully creating, id_rsa and id_rsa.pub in .ssh, and then appending your id_rsa.pub key to the authorized_keys file in .ssh on the remote server, you set up these keys so that the server recognizes login attempts from your local computer. id_rsa contains an id that identifies your machine. id_rsa.pub contains the public id to be recognized for remote servers.
+When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you are prompted for a password. Because you are doing this many times a day, this is annoying. It is also not necessary. By carefully creating, `id_rsa` and `id_rsa.pub` in `.ssh`, and then appending your `id_rsa.pub` key to the `authorized_keys` file in `.ssh` on the remote server, you set up these keys so that the server recognizes login attempts from your local computer. id_rsa contains an id that identifies your machine. `id_rsa.pub` contains the public id to be recognized for remote servers.
 
-1. Go to .ssh on your private computer (or whichever computer will be the login source). You should find id_rsa and id_rsa.pub. If they are there, have a look so that you understand the information they store.
+1. Go to `.ssh` on your private computer (or whichever computer will be the login source). You should find `id_rsa` and `id_rsa.pub`. If they are there, have a look so that you understand the information they store.
 
 	If these files do not exist, you need to make them.
-	$ ssh-keygen -t rsa
+
+	    $ ssh-keygen -t rsa
+
 	Generating public/private rsa key pair. 
 
-	IMPORTANTLY, you dont need to create a passphrase, and I suggest not doing so. When prompted for passphrase just hit ENTER for black passphrse.
+	IMPORTANTLY, you dont need to create a passphrase, and I suggest not doing so. When prompted for passphrase just hit ENTER for blank passphrase.
 
-2. On the remote server (ponderosa, pronghorn, or wherever else), go to .ssh in your home directory. You should find a file, authorized_keys, which contains keys for whichever computers you choose. Have a look so that you understand the information it contains. IF it doesnt exist, create a blank file with this name.
+2. On the remote server (ponderosa, pronghorn, or wherever else), go to .ssh in your home directory. You should find a file, `authorized_keys`, which contains keys for whichever computers you choose. Have a look so that you understand the information it contains. IF it doesn't exist, create a blank file with this name.
 
-	$ less authorized_keys
-	or
-	$ touch authorized_keys
 
-3. Copy the id_rsa.pub file from you local computer to .ssh on the remote server (use care if id_rsa.pub already exists on the server, in which case Id suggest copying id_rsa.pub on your local computer into a different file name before moving).
+	    $ less authorized_keys
+	
+    or
+    
+	    $ touch authorized_keys
 
-	$ scp id_rsa.pub username@pronghorn.rc.unr.edu:~/.ssh/
+3. Copy the `id_rsa.pub` file from you local computer to `.ssh` on the remote server (use care if id_rsa.pub already exists on the server, in which case I'd suggest copying `id_rsa.pub` on your local computer into a different file name before moving).
 
-4. Append the contents of id_rsa.pub (from your local computer) to authorized_keys (on the remote server).
+	    $ scp id_rsa.pub username@pronghorn.rc.unr.edu:~/.ssh/
 
-	$ cat id_rsa.pub >> authorized_keys
+4. Append the contents of `id_rsa.pub` (from your local computer) to `authorized_keys` (on the remote server).
+
+	    $ cat id_rsa.pub >> authorized_keys
 
 	or just copy the line of interest in id_rsa.pub and copy it into authorized keys using nano, emacs, or vim.
 
