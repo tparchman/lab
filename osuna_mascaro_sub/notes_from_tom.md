@@ -39,3 +39,12 @@ Cleaned and demultiplexed .fastq files by individual:
 Cleaned and demultiplexed .fastq files by individual:
 
     /archive/parchman_lab/rawdata_to_backup/GSAF_11_20_bc_parse/POSE
+
+
+
+## Analyses to read up on:
+Genetic environment association (GEA) analyses (RDA, LFMM, Gradient Forests).
+
+Estimating ploidy from GBS data (gbs2ploidy, from Zach Gompert, and any other methods that are out there). Ideally we use such a method with the C. douglasii data, for which we know ploidy (2, 4, and a few 6) for most populations, but not all.
+
+Methods for inferring gene flow for landscape genomic data. We havent been using such methods, but may like to in the near future.
