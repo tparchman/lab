@@ -19,7 +19,7 @@
 - analyses mostly done
 - target journal Evolution Letters
 
-## *Chaenactic douglassii*
+## *Chaenactis douglassii*
 - Caro leading, with Trevor heavy help (joint first author if necessary)
 - data in hand, promising
 - GATK and entropy on deck, get into this once methods get dialed with *A. tridentata*
