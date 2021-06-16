@@ -1,9 +1,4 @@
----
-title: ""
-author: ""
-date: ""
-output: html_document
----
+
 #### EEMS
 
 ```{r eval=FALSE}
