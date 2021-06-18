@@ -12,14 +12,7 @@ Needs vcf2mpglV1.3TLP.pl
 perl /working/mascaro/acth/entropy2/vcf2mpglV1.3TLP.pl variants_maf5_miss9_thin100_noBadInds.recode.vcf
 ```
 
-2. Create individuals file:
-```{r eval=FALSE}
-vcftools --vcf variants_maf5_miss9_thin100_noBadInds.recode.vcf --missing-indv 
-cut -f 1 out.imiss > acth_individuals.txt
-sed "s/INDV/ind/" acth_individuals.txt | sed "s/aln_//g" | sed "s/.sorted.bam//g" > acth_goodheads.txt
-```
-
-3. Generate pntest file:
+2. Generate pntest file:
 
 Needs gl2genestV1.3.pl 
 
@@ -28,24 +21,7 @@ perl /working/mascaro/acth/entropy2/gl2genestV1.3.pl variants_maf5_miss9_thin100
 mv variants_maf5_miss9_thin100_noBadInds.mpgl acth_entropy.mpgl
 ```
 
-4. Generate populatios file:
-```{r eval=FALSE}
-cut -d "_" -f 1,2 acth_goodheads.txt > acth_pops.txt
-```
-
-5. Make genotype likelihood matrix:
-
-```{r eval=FALSE}
-R
-read.table("pntest_variants_maf5_miss9_thin100_noBadInds.txt", header=F)->gl
-read.table("acth_individuos.txt", header=T)->ids
-read.table("acth_pops.txt", header=T)->pops
-t(gl)->tgl
-cbind(ids, pops, tgl)->tidsgl
-write.table(tidsgl, file="acth_16048_2round.txt", sep=" ", row.names=F, col.names=F , quote=F)
-```
-
-6. PCA for entropy:
+3. PCA for entropy:
 ```{r eval=FALSE}
 R
 PCA_entropy <- function(g){
@@ -81,9 +57,11 @@ Sp_Pop <- paste("GM",Pop_ID$Pop,sep="_")
 Pop_ID <- paste(Pop_ID$Pop,Pop_ID$ID,sep="_")
 Header <- data.frame(Sp_Pop,Pop_ID)
 write.table(t(Header),'entropy_header.txt',sep = " ", quote = FALSE,row.names = FALSE,col.names = FALSE)
+```
 
 
-7. Generate LDA files
+4. Generate LDA files
+```{r eval=FALSE}
 library(MASS)
 
 k2<-kmeans(pca_df[,1:5],2,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
@@ -117,21 +95,13 @@ write.table(round(ldak9$posterior,5),file="ldak9.txt",quote=F,row.names=F,col.na
 write.table(round(ldak10$posterior,5),file="ldak10.txt",quote=F,row.names=F,col.names=F)
 ```
 
-8. Make mpgl input file for entropy:
-
-```{r eval=FALSE}
-grep "_" acth_ids_good_head.txt > acth_nohead.txt
-perl create_entropy_top_2rows.pl  acth_nohead.txt
-cat entropy_2rows.txt acth_entropy.mpgl > acth_entropy2.mpgl
-```
-
-9. Running entropy (K 2-10):
+5. Running entropy (K 2-10):
 
 ```{r eval=FALSE}
 
 module load entropy/1.2
 
-entropy -i acth_entropy2.mpgl -o acth_k2.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 2 -q ldak2.txt -m 1 -w 0 &> k2stdout.txt &
+entropy -i acth_entropy.mpgl -o acth_k2.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 2 -q ldak2.txt -m 1 -w 0 &> k2stdout.txt &
 
 entropy -i acth_entropy2.mpgl -o acth_k3.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 3 -q ldak3.txt -m 1 -w 0 &> k3stdout.txt &
 
