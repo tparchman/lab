@@ -25,6 +25,7 @@ Needs gl2genestV1.3.pl
 
 ```{r eval=FALSE}
 perl /working/mascaro/acth/entropy2/gl2genestV1.3.pl variants_maf5_miss9_thin100_noBadInds.mpgl mean
+mv variants_maf5_miss9_thin100_noBadInds.mpgl acth_entropy.mpgl
 ```
 
 4. Generate populatios file:
@@ -37,7 +38,7 @@ cut -d "_" -f 1,2 acth_goodheads.txt > acth_pops.txt
 ```{r eval=FALSE}
 R
 read.table("pntest_variants_maf5_miss9_thin100_noBadInds.txt", header=F)->gl
-read.table("acth_individuos.txtt", header=T)->ids
+read.table("acth_individuos.txt", header=T)->ids
 read.table("acth_pops.txt", header=T)->pops
 t(gl)->tgl
 cbind(ids, pops, tgl)->tidsgl
@@ -64,6 +65,15 @@ PCA_entropy <- function(g){
   pca_df<- method1$x[,1:27]
   return(pca_df)
 } 
+
+require(readr)
+require(MASS)
+require(LEA)
+require(ggplot2)
+g <- read.table("pntest_mean_variants_maf5_miss9_thin100_noBadInds.recode.txt", header=F)
+Pop_ID_Sum <- read.csv("Pop_ID.csv")
+pca_df <- PCA_entropy(t(g))
+
 
 Header for entropy:
 Pop_ID <- read.csv("Pop_ID.csv")
@@ -107,28 +117,37 @@ write.table(round(ldak9$posterior,5),file="ldak9.txt",quote=F,row.names=F,col.na
 write.table(round(ldak10$posterior,5),file="ldak10.txt",quote=F,row.names=F,col.names=F)
 ```
 
-8. Running entropy (K 2-10):
+8. Make mpgl input file for entropy:
 
 ```{r eval=FALSE}
+grep "_" acth_ids_good_head.txt > acth_nohead.txt
+perl create_entropy_top_2rows.pl  acth_nohead.txt
+cat entropy_2rows.txt acth_entropy.mpgl > acth_entropy2.mpgl
+```
+
+9. Running entropy (K 2-10):
+
+```{r eval=FALSE}
+
 module load entropy/1.2
 
-entropy -i acth_entropy.mpgl -o acth_k2.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 2 -q ldak2.txt -m 1 -w 0 &> k2stdout.txt &
+entropy -i acth_entropy2.mpgl -o acth_k2.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 2 -q ldak2.txt -m 1 -w 0 &> k2stdout.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k3.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 3 -q ldak3.txt -m 1 -w 0 &> k3stdout.txt &
+entropy -i acth_entropy2.mpgl -o acth_k3.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 3 -q ldak3.txt -m 1 -w 0 &> k3stdout.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k4.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 4 -q ldak4.txt -m 1 -w 0 &> k4stdout.txt &
+entropy -i acth_entropy2.mpgl -o acth_k4.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 4 -q ldak4.txt -m 1 -w 0 &> k4stdout.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k5.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 5 -q ldak5.txt -m 1 -w 0 &> k5stdout.txt &
+entropy -i acth_entropy2.mpgl -o acth_k5.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 5 -q ldak5.txt -m 1 -w 0 &> k5stdout.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k6.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 6 -q ldak6.txt -m 1 -w 0 &> k6stdout.txt &
+entropy -i acth_entropy2.mpgl -o acth_k6.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 6 -q ldak6.txt -m 1 -w 0 &> k6stdout.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k7.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak7.txt -m 1 -w 0 &> k7stdout.txt &
+entropy -i acth_entropy2.mpgl -o acth_k7.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak7.txt -m 1 -w 0 &> k7stdout.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k8.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak8.txt -m 1 -w 0 &> k8stdout4.txt &
+entropy -i acth_entropy2.mpgl -o acth_k8.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak8.txt -m 1 -w 0 &> k8stdout4.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k9.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak9.txt -m 1 -w 0 &> k9stdout4.txt &
+entropy -i acth_entropy2.mpgl -o acth_k9.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak9.txt -m 1 -w 0 &> k9stdout4.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k10.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak10.txt -m 1 -w 0 &> k10stdout.txt &
+entropy -i acth_entropy2.mpgl -o acth_k10.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak10.txt -m 1 -w 0 &> k10stdout.txt &
 ```
 
 Get the DICs values for each K value:
