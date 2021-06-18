@@ -53,7 +53,7 @@ pca_df <- PCA_entropy(t(g))
 
 Header for entropy:
 Pop_ID <- read.csv("Pop_ID.csv")
-Sp_Pop <- paste("GM",Pop_ID$Pop,sep="_")
+Sp_Pop <- paste("AT",Pop_ID$Pop,sep="_")
 Pop_ID <- paste(Pop_ID$Pop,Pop_ID$ID,sep="_")
 Header <- data.frame(Sp_Pop,Pop_ID)
 write.table(t(Header),'entropy_header.txt',sep = " ", quote = FALSE,row.names = FALSE,col.names = FALSE)
