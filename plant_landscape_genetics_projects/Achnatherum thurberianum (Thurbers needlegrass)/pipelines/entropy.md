@@ -17,8 +17,8 @@ perl /working/mascaro/acth/entropy2/vcf2mpglV1.3TLP.pl variants_maf5_miss9_thin1
 Needs gl2genestV1.3.pl 
 
 ```{r eval=FALSE}
-perl /working/mascaro/acth/entropy2/gl2genestV1.3.pl variants_maf5_miss9_thin100_noBadInds.mpgl mean
-mv variants_maf5_miss9_thin100_noBadInds.mpgl acth_entropy.mpgl
+perl /working/mascaro/acth/entropy2/gl2genestV1.3.pl variants_maf5_miss9_thin100_noBadInds.recode.mpgl mean
+
 ```
 
 3. PCA for entropy:
@@ -98,7 +98,7 @@ write.table(round(ldak10$posterior,5),file="ldak10.txt",quote=F,row.names=F,col.
 5. Running entropy (K 2-10):
 
 ```{r eval=FALSE}
-cat entropy_header.txt good_snps.recode.mpgl >acth_entropy.mpgl
+cat *entropy_header.txt variants_maf5_miss9_thin100_noBadInds.recode.mpgl >acth_entropy.mpgl
 module load entropy/1.2
 
 entropy -i acth_entropy.mpgl -o acth_k2.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 2 -q ldak2.txt -m 1 -w 0 &> k2stdout.txt &
