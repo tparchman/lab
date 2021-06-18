@@ -124,11 +124,11 @@ entropy -i acth_entropy.mpgl -o acth_k6.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .0
 
 entropy -i acth_entropy.mpgl -o acth_k7.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak7.txt -m 1 -w 0 &> k7stdout.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k8.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak7.txt -m 1 -w 0 &> k7stdout4.txt &
+entropy -i acth_entropy.mpgl -o acth_k8.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak8.txt -m 1 -w 0 &> k8stdout4.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k9.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak7.txt -m 1 -w 0 &> k7stdout4.txt &
+entropy -i acth_entropy.mpgl -o acth_k9.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak9.txt -m 1 -w 0 &> k9stdout4.txt &
 
-entropy -i acth_entropy.mpgl -o acth_k10.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak7.txt -m 1 -w 0 &> k7stdout.txt &
+entropy -i acth_entropy.mpgl -o acth_k10.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak10.txt -m 1 -w 0 &> k10stdout.txt &
 ```
 
 Get the DICs values for each K value:
