@@ -98,26 +98,26 @@ write.table(round(ldak10$posterior,5),file="ldak10.txt",quote=F,row.names=F,col.
 5. Running entropy (K 2-10):
 
 ```{r eval=FALSE}
-
+cat entropy_header.txt good_snps.recode.mpgl >acth_entropy.mpgl
 module load entropy/1.2
 
 entropy -i acth_entropy.mpgl -o acth_k2.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 2 -q ldak2.txt -m 1 -w 0 &> k2stdout.txt &
 
-entropy -i acth_entropy2.mpgl -o acth_k3.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 3 -q ldak3.txt -m 1 -w 0 &> k3stdout.txt &
+entropy -i acth_entropy.mpgl -o acth_k3.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 3 -q ldak3.txt -m 1 -w 0 &> k3stdout.txt &
 
-entropy -i acth_entropy2.mpgl -o acth_k4.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 4 -q ldak4.txt -m 1 -w 0 &> k4stdout.txt &
+entropy -i acth_entropy.mpgl -o acth_k4.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 4 -q ldak4.txt -m 1 -w 0 &> k4stdout.txt &
 
-entropy -i acth_entropy2.mpgl -o acth_k5.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 5 -q ldak5.txt -m 1 -w 0 &> k5stdout.txt &
+entropy -i acth_entropy.mpgl -o acth_k5.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 5 -q ldak5.txt -m 1 -w 0 &> k5stdout.txt &
 
-entropy -i acth_entropy2.mpgl -o acth_k6.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 6 -q ldak6.txt -m 1 -w 0 &> k6stdout.txt &
+entropy -i acth_entropy.mpgl -o acth_k6.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 6 -q ldak6.txt -m 1 -w 0 &> k6stdout.txt &
 
-entropy -i acth_entropy2.mpgl -o acth_k7.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak7.txt -m 1 -w 0 &> k7stdout.txt &
+entropy -i acth_entropy.mpgl -o acth_k7.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak7.txt -m 1 -w 0 &> k7stdout.txt &
 
-entropy -i acth_entropy2.mpgl -o acth_k8.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak8.txt -m 1 -w 0 &> k8stdout4.txt &
+entropy -i acth_entropy.mpgl -o acth_k8.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak8.txt -m 1 -w 0 &> k8stdout4.txt &
 
-entropy -i acth_entropy2.mpgl -o acth_k9.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak9.txt -m 1 -w 0 &> k9stdout4.txt &
+entropy -i acth_entropy.mpgl -o acth_k9.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak9.txt -m 1 -w 0 &> k9stdout4.txt &
 
-entropy -i acth_entropy2.mpgl -o acth_k10.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak10.txt -m 1 -w 0 &> k10stdout.txt &
+entropy -i acth_entropy.mpgl -o acth_k10.hdf5 -l 70000 -b 30000 -t 10 -s 20 -e .01 -k 7 -q ldak10.txt -m 1 -w 0 &> k10stdout.txt &
 ```
 
 Get the DICs values for each K value:
