@@ -32,9 +32,9 @@ perl /working/mascaro/acth/entropy2/gl2genestV1.3.pl variants_maf5_miss9_thin100
 cut -d "_" -f 1,2 acth_goodheads.txt > acth_pops.txt
 ```
 
-```{r eval=FALSE}
 5. Make genotype likelihood matrix:
 
+```{r eval=FALSE}
 R
 read.table("pntest_variants_maf5_miss9_thin100_noBadInds.txt", header=F)->gl
 read.table("acth_individuos.txtt", header=T)->ids
@@ -44,50 +44,57 @@ cbind(ids, pops, tgl)->tidsgl
 write.table(tidsgl, file="acth_16048_2round.txt", sep=" ", row.names=F, col.names=F , quote=F)
 ```
 
-6. Generate LDA files
+6. PCA for entropy:
 ```{r eval=FALSE}
 R
-g <- read.table("acth_16048_2round.txt", header=F)
-names <- read.table("acth_individuos.txt", header=T)
-pops <- read.table("acth_pops.txt", header=T)
-nind <- dim(g)[2]
-nloci <- dim(g)[1]
+PCA_entropy <- function(g){
+  colmean<-apply(g,2,mean,na.rm=TRUE)
+  normalize<-matrix(nrow = nrow(g),ncol=ncol(g))
+  af<-colmean/2
+  for (m in 1:length(af)){
+    nr<-g[ ,m]-colmean[m]
+    dn<-sqrt(af[m]*(1-af[m]))
+    normalize[ ,m]<-nr/dn
+  }
+ 
+  normalize[is.na(normalize)]<-0
+  method1<-prcomp(normalize, scale. = FALSE,center = FALSE)
+  pve <- summary(method1)$importance[2,]
+  print(pve[1:5])
+  pca_df<- method1$x[,1:27]
+  return(pca_df)
+} 
 
-gmn<-apply(g,1,mean, na.rm=T)
-gmnmat<-matrix(gmn,nrow=nloci,ncol=nind)
-gprime<-g-gmnmat ## remove mean
-gcovarmat<-matrix(NA,nrow=nind,ncol=nind)
-for(i in 1:nind){
-    for(j in i:nind){
-    	if (i==j){
-        	gcovarmat[i,j]<-cov(gprime[,i],gprime[,j], use="pairwise.complete.obs")
-    	}
-    	else{
-        	gcovarmat[i,j]<-cov(gprime[,i],gprime[,j], use="pairwise.complete.obs")
-        	gcovarmat[j,i]<-gcovarmat[i,j]
-    	}
-	}
-}
+Header for entropy:
+Pop_ID <- read.csv("Pop_ID.csv")
+Sp_Pop <- paste("GM",Pop_ID$Pop,sep="_")
+Pop_ID <- paste(Pop_ID$Pop,Pop_ID$ID,sep="_")
+Header <- data.frame(Sp_Pop,Pop_ID)
+write.table(t(Header),'entropy_header.txt',sep = " ", quote = FALSE,row.names = FALSE,col.names = FALSE)
 
-pcgcov<-prcomp(x=gcovarmat,center=TRUE,scale=FALSE)
-pcgcov->pcg
+
+7. Generate LDA files
 library(MASS)
 
-k2<-kmeans(pcg$x[,1:5],2,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
-k3<-kmeans(pcg$x[,1:5],3,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
-k4<-kmeans(pcg$x[,1:5],4,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
-k5<-kmeans(pcg$x[,1:5],5,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
-k6<-kmeans(pcg$x[,1:5],6,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
-k7<-kmeans(pcg$x[,1:5],7,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
-k8<-kmeans(pcg$x[,1:5],7,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
+k2<-kmeans(pca_df[,1:5],2,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
+k3<-kmeans(pca_df[,1:5],3,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
+k4<-kmeans(pca_df[,1:5],4,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
+k5<-kmeans(pca_df[,1:5],5,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
+k6<-kmeans(pca_df[,1:5],6,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
+k7<-kmeans(pca_df[,1:5],7,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
+k8<-kmeans(pca_df[,1:5],8,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
+k9<-kmeans(pca_df[,1:5],9,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
+k10<-kmeans(pca_df[,1:5],10,iter.max=10,nstart=10,algorithm="Hartigan-Wong")
 
-ldak2<-lda(x=pcg$x[,1:5],grouping=k2$cluster,CV=TRUE)
-ldak3<-lda(x=pcg$x[,1:5],grouping=k3$cluster,CV=TRUE)
-ldak4<-lda(x=pcg$x[,1:5],grouping=k4$cluster,CV=TRUE)
-ldak5<-lda(x=pcg$x[,1:5],grouping=k5$cluster,CV=TRUE)
-ldak6<-lda(x=pcg$x[,1:5],grouping=k6$cluster,CV=TRUE)
-ldak7<-lda(x=pcg$x[,1:5],grouping=k7$cluster,CV=TRUE)
-ldak8<-lda(x=pcg$x[,1:5],grouping=k7$cluster,CV=TRUE)
+ldak2<-lda(x=pca_df[,1:5],grouping=k2$cluster,CV=TRUE)
+ldak3<-lda(x=pca_df[,1:5],grouping=k3$cluster,CV=TRUE)
+ldak4<-lda(x=pca_df[,1:5],grouping=k4$cluster,CV=TRUE)
+ldak5<-lda(x=pca_df[,1:5],grouping=k5$cluster,CV=TRUE)
+ldak6<-lda(x=pca_df[,1:5],grouping=k6$cluster,CV=TRUE)
+ldak7<-lda(x=pca_df[,1:5],grouping=k7$cluster,CV=TRUE)
+ldak8<-lda(x=pca_df[,1:5],grouping=k8$cluster,CV=TRUE)
+ldak9<-lda(x=pca_df[,1:5],grouping=k9$cluster,CV=TRUE)
+ldak10<-lda(x=pca_df[,1:5],grouping=k10$cluster,CV=TRUE)
 
 write.table(round(ldak2$posterior,5),file="ldak2.txt",quote=F,row.names=F,col.names=F)
 write.table(round(ldak3$posterior,5),file="ldak3.txt",quote=F,row.names=F,col.names=F)
@@ -95,20 +102,9 @@ write.table(round(ldak4$posterior,5),file="ldak4.txt",quote=F,row.names=F,col.na
 write.table(round(ldak5$posterior,5),file="ldak5.txt",quote=F,row.names=F,col.names=F)
 write.table(round(ldak6$posterior,5),file="ldak6.txt",quote=F,row.names=F,col.names=F)
 write.table(round(ldak7$posterior,5),file="ldak7.txt",quote=F,row.names=F,col.names=F)
-write.table(round(ldak7$posterior,5),file="ldak8.txt",quote=F,row.names=F,col.names=F)
-```
-
-7. Make mpgl input file for entropy:
-```{r eval=FALSE}
-grep "_" acth_goodheads.txt > acth_nohead.txt
-perl /working/mascaro/acth/entropy2/create_entropy_top_2rows.pl acth_nohead.txt 
-mkdir entropy2
-mv ldak* entropy2/
-mv entropy_2rows.txt entropy/
-cd entropy/
-cat entropy_2rows.txt variants_maf5_miss9_thin100_noBadInds.mpgl > acth_entropy.mpgl
-
-*modify the header with a text editor (e.g.,nano) adding the numer of individuals, number of loci like that: 199 16048 1
+write.table(round(ldak8$posterior,5),file="ldak8.txt",quote=F,row.names=F,col.names=F)
+write.table(round(ldak9$posterior,5),file="ldak9.txt",quote=F,row.names=F,col.names=F)
+write.table(round(ldak10$posterior,5),file="ldak10.txt",quote=F,row.names=F,col.names=F)
 ```
 
 8. Running entropy (K 2-10):
