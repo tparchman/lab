@@ -61,15 +61,17 @@ p
 
 ```
 
-### Run RefMapOpt.sh using 0.94 as similarity threshold:
+### Run RefMapOpt.sh using the similarity threshold picked:
 
 Reads need to be trimmed before run RefMapOpt!
 
 Pick optimal k1,k2 cutoffs (Ideally, you want to maximize properly paired mappings and coverage while minimizing mismatched reads.)
 
-### Run dDocent on this subset with the correct assembly parameters (skipping mapping and snp calling.)
+### Run dDocent on the reads subset:
+
+Use the correct assembly parameters (skipping mapping and snp calling.)
 
 Copy the reference.fasta file from this RefOpt directory to your main working directory.
 
-### Run dDocent on your full data set, skipping trimming and assembly.
+### Run dDocent on your full data set (skipping trimming and assembly.)
 
