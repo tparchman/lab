@@ -1,0 +1,207 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Code below sets chunk width so code wraps and doesn't run off the page
+```{r}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+
+```
+---
+title: "Code for plotting Map, PCA, and UMAP"
+author: "TLP"
+output: pdf_document
+---
+
+## Example code for plotting maps, PCA, and UMAP with a matching color scheme. For this example we will work with genotype data from 231 individuals from 12 populations of *Pinus muricata*. The sampling here represents basically the entire range of this fairly rare serotinous pine. Here we are going to take population location information and a genotype probability matrix to plot a map, run and plot PCA, and run and plot UMAP. 
+
+### Loading necessary libraries
+```{r}
+library(ggmap)
+library(devtools)
+require(ggplot2)
+require(ggsci)
+require(ggrepel)
+library(data.table)
+library(patchwork)
+library(data.table)
+library(ggplot2)
+library(ggsci)
+library(umap)
+library(LEA)
+library(readr)
+library(ggpubr)
+```
+
+## Making maps using the stamenmap layers for ggmap
+
+First need to set up an API with google inorder to access their maps Feel free to use my (TFaske) key
+
+```{r eval=FALSE}
+register_google('AIzaSyDVcjLPd2Kp2CQrfFKqpZcIJvmARnBRXcY')
+ggmap_hide_api_key()
+google_key()
+```
+
+Map data should have IDs for each population along with latitude and longitude.
+
+```{r}
+PIMUcoord <- read.csv('PIMU_latlong.csv', header=T)
+names(PIMUcoord) <- c('Name','Pop','Lat','Long')
+
+```
+### Get the google map
+Here you may want to play with the zoom, scale, and maptype arguments. Here we are using the get_stamenmap function which accesses a diversity of map options. The terrain is far superior to base ggmap.
+
+
+
+```{r eval=FALSE}
+map <- get_stamenmap(bbox = c(left = -124.7, bottom = 33.4, right = -118, top = 41.4),
+zoom=8,scale = 3,maptype = 'terrain-background')
+##zoom controls resolution, 10 takes forever
+
+#view the map to make sure the dimensions are good
+ggmap(map) + geom_point(data = PIMUcoord, aes(x = Long, y = Lat),size=3,pch=21,fill="white",col="black") +
+xlab("Longitude") + ylab("Latitude") +
+coord_map(xlim=c(-124.7,-118),ylim=c(33.4,41.4)) #selects the range for x and y
+```
+
+### Make the map with labels by population 
+
+```{r}
+map <- ggmap(map) +
+geom_point(data = PIMUcoord, aes(x = Long, y = Lat),size=2,col="black",fill='white',pch=21) +
+geom_label_repel(data = PIMUcoord, aes(x = Long, y = Lat,label = Pop,fill=Pop),
+colour = "black", fontface = "bold") +
+scale_fill_d3(palette = 'category20') +
+#scale_fill_manual(name='Population:',values=listofcolors) +
+#above comment changes the color of the fill in the labels with custom colors
+coord_map(xlim=c(-124.7,-118),ylim=c(33.4,41.4)) +
+xlab("Longitude") + ylab("Latitude") + theme_bw() +
+theme(legend.position = 'none',
+axis.text = element_text(size=13),
+axis.title = element_text(size = 15, colour="black",face = "bold", vjust = 1),
+panel.border = element_rect(size = 1.5, colour = "black"),
+panel.grid.major = element_blank(),
+panel.grid.minor = element_blank())
+map
+
+
+#ggsave('map_PIMU.pdf',height=6,width=5)
+ggsave('map_PIMU_SCI_stamenterrain.pdf',height=5,width=8)
+
+```
+
+
+## Function for running PCA, written by Trevor Faske
+
+- PCA for 012 coded  vcf files
+- Following method in Patterson et al 2006
+
+Input files:
+
+`df_gen`: genotypic data with individuals as rows and snps as columns. Can include missing data. Either genotype probabilities or 012 format
+
+Output:
+
+`df_out`: \
+`$pca_df`: dataframe with rows as individuals and columns as PC1-X, Pop, ID \
+`$pve`: list of proportion of variance explained for each PC \
+
+**Function:**
+
+```{r}
+
+PCA_gen <- function(df_gen,num=10,tw=FALSE,tw_pvalue=0.01){
+  
+  df_gen <- apply(df_gen, 2, function(df) gsub(-1,NA,df,fixed=TRUE))
+  df_gen <- apply(df_gen, 2, function(df) as.numeric(df))
+  
+  colmean<-apply(df_gen,2,mean,na.rm=TRUE)
+  
+  normalize<-matrix(nrow = nrow(df_gen),ncol=ncol(df_gen))
+  af<-colmean/2
+  
+  for (m in 1:length(af)){
+    nr<-df_gen[ ,m]-colmean[m]
+    dn<-sqrt(af[m]*(1-af[m]))
+    normalize[ ,m]<-nr/dn
+  }
+  
+  normalize[is.na(normalize)]<-0
+  
+  method1<-prcomp(normalize, scale. = FALSE,center = FALSE)
+  pve <- summary(method1)$importance[2,]
+  print(pve[1:5])
+  
+  ### adjust number of PC axes ###
+  
+  if(nrow(df_gen) < num){
+    num <- nrow(df_gen)
+  }
+
+  #### Tracy Widom, PC axes ####
+  if(tw == TRUE){
+    cat('\nRunning Tracy Widom test....\n\n')
+    write.lfmm(normalize, "temp.lfmm")
+    pca_tw <- pca("temp.lfmm",center=FALSE)
+    tw <- tracy.widom(pca_tw)
+    tw_sign <- tw$pvalues[tw$pvalues<=tw_pvalue]
+    cat("\nNumber of TW sig. PC axes: ",length(tw_sign),'\n\n')
+    num = length(tw_sign)
+    unlink('temp.lfmm')
+  }
+  
+  pca_X<- method1$x[,1:num]
+  
+  pca_X <- as.data.frame(pca_X)
+  
+  pca_out <- list("pca_df"=pca_X,"pve"=pve)
+  
+  return(pca_out)
+}
+```
+### EXAMPLE: All sampled populations of *Pinus muricata*
+
+```{r }
+#### setwd ####
+setwd('/Users/thomasparchman/Documents/GitHub/lab/parchman_sub/map_PCA_umap')
+
+#### read in files ####
+g <- fread('PM_gl_matrix_miss30_maf05_noBadInds_noHighCov_noParalogs_noWeird.recode.csv',sep=',',data.table = F)
+g <- g[,-c(1:2)]
+
+Pop_ID_Sum <- read.csv("PM_pop_ids.csv")
+
+##### Run PCA #### 
+pca_out <- PCA_gen(g,tw=TRUE)
+pve <- pca_out$pve[1:5]
+pve
+
+ncol(pca_out$pca_df) # 14, number of tw PC axes
+
+pca_df <- pca_out$pca_df 
+pca_df <- cbind(Pop_ID_Sum,pca_df)
+```
+
+## Running UMAP
+following Faske, Jahner, Diaz-Papkovich 2019 Plos Genetics
+
+```{r eval=FALSE}
+umap_g <- as.data.frame(umap(g)$layout)
+names(umap_g) <- c('layout1','layout2')
+umap_g <- cbind(Pop_ID_Sum,umap_g)
+
+umap_tw_pcs <- as.data.frame(umap(pca_out$pca_df)$layout) #number of tw PC axes
+names(umap_tw_pcs) <- c('layout1','layout2')
+umap_tw_pcs <- cbind(Pop_ID_Sum,umap_tw_pcs)
+
+umap_ten_pcs <- as.data.frame(umap(pca_out$pca_df[,1:10])$layout)
+names(umap_ten_pcs) <- c('layout1','layout2')
+umap_ten_pcs <- cbind(Pop_ID_Sum,umap_ten_pcs)
+
+```
+
