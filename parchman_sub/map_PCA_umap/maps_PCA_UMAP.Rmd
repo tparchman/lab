@@ -67,11 +67,10 @@ zoom=8,scale = 3,maptype = 'terrain-background')
 ggmap(map) + geom_point(data = PIMUcoord, aes(x = Long, y = Lat),size=3,pch=21,fill="white",col="black") +
 xlab("Longitude") + ylab("Latitude") +
 coord_map(xlim=c(-124.7,-118),ylim=c(33.4,41.4)) #selects the range for x and y
-```
+
 
 ### Make the map with labels by population 
 
-```{r}
 map <- ggmap(map) +
 geom_point(data = PIMUcoord, aes(x = Long, y = Lat),size=2,col="black",fill='white',pch=21) +
 geom_label_repel(data = PIMUcoord, aes(x = Long, y = Lat,label = Pop,fill=Pop),
@@ -111,7 +110,7 @@ Output:
 `$pca_df`: dataframe with rows as individuals and columns as PC1-X, Pop, ID \
 `$pve`: list of proportion of variance explained for each PC \
 
-**Function:**
+### **Function:**
 
 ```{r}
 
@@ -167,11 +166,11 @@ PCA_gen <- function(df_gen,num=10,tw=FALSE,tw_pvalue=0.01){
 ### EXAMPLE: All sampled populations of *Pinus muricata*
 
 ```{r }
-#### setwd ####
+#### setwd if necessary ####
 setwd('/Users/thomasparchman/Documents/GitHub/lab/parchman_sub/map_PCA_umap')
 
 #### read in files ####
-g <- fread('PM_gl_matrix_miss30_maf05_noBadInds_noHighCov_noParalogs_noWeird.recode.csv',sep=',',data.table = F)
+g <- fread('PM_gprob2.txt',sep=',',data.table = F)
 g <- g[,-c(1:2)]
 
 Pop_ID_Sum <- read.csv("PM_pop_ids.csv")

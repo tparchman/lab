@@ -1,5 +1,5 @@
 new("pcaProject", projDir = "/Users/thomasparchman/Documents/GitHub/lab/parchman_sub/map_PCA_umap/", 
-    pcaDir = "temp.pca/", n = 231L, L = 15222L, K = 231L, center = FALSE, 
+    pcaDir = "temp.pca/", n = 230L, L = 15222L, K = 230L, center = FALSE, 
     scale = FALSE, pcaProject.file = "temp.pcaProject", input.file = "temp.lfmm", 
     eigenvalue.file = "temp.eigenvalues", eigenvector.file = "temp.eigenvectors", 
     sdev.file = "temp.sdev", projection.file = "temp.projections")
