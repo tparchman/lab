@@ -163,7 +163,7 @@ PCA_gen <- function(df_gen,num=10,tw=FALSE,tw_pvalue=0.01){
   return(pca_out)
 }
 ```
-### EXAMPLE: All sampled populations of *Pinus muricata*
+### Running PCA on the genotype probability matrix for all sampled populations of *Pinus muricata*
 
 ```{r }
 #### setwd if necessary ####
@@ -186,7 +186,7 @@ pca_df <- pca_out$pca_df
 pca_df <- cbind(Pop_ID_Sum,pca_df)
 ```
 
-## Running UMAP
+## Running UMAP using default settings
 following Faske, Jahner, Diaz-Papkovich 2019 Plos Genetics
 
 ```{r eval=FALSE}
@@ -198,7 +198,7 @@ umap_tw_pcs <- as.data.frame(umap(pca_out$pca_df)$layout) #number of tw PC axes
 names(umap_tw_pcs) <- c('layout1','layout2')
 umap_tw_pcs <- cbind(Pop_ID_Sum,umap_tw_pcs)
 
-umap_ten_pcs <- as.data.frame(umap(pca_out$pca_df[,1:10])$layout)
+umap_ten_pcs <- as.data.frame(umap(pca_out$pca_df[,1:10])$layout) #first 10 PCs
 names(umap_ten_pcs) <- c('layout1','layout2')
 umap_ten_pcs <- cbind(Pop_ID_Sum,umap_ten_pcs)
 
