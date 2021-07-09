@@ -171,7 +171,7 @@ setwd('/Users/thomasparchman/Documents/GitHub/lab/parchman_sub/map_PCA_umap')
 
 #### read in files ####
 g <- fread('PM_gprob2.txt',sep=',',data.table = F)
-g <- g[,-c(1:2)]
+g <- g[,-1]
 
 Pop_ID_Sum <- read.csv("PM_pop_ids.csv")
 
@@ -204,3 +204,91 @@ umap_ten_pcs <- cbind(Pop_ID_Sum,umap_ten_pcs)
 
 ```
 
+### Plotting PCA using same colorscheme as above with the map (palette='category20')
+
+pve <- c(0.12351 0.02644 0.01596 0.01236 0.01129)
+
+#col17 <- pal_d3(palette='category20')(20)[c(1:5,7,9:17,19,20)]
+PCA_plot <- ggplot(data = pca_df, aes(x=PC1,y=PC2,fill=as.character(Pop))) +
+  geom_point(colour='black',size = 4,pch=21) + ggtitle("PCA") +
+  xlab(paste("PC",1," (",pve[1]*100,"%)",sep="")) + ylab(paste("PC",2," (",pve[2]*100,"%)",sep=""))  +
+# scale_fill_manual(values = col17) +
+  scale_fill_d3(palette = 'category20') +
+  theme_bw() +
+theme(#legend.position = 'none', #removes legend
+        plot.title = element_text(size = 18, colour="black"),
+        axis.text = element_text(size=16),
+        axis.title = element_text(size = 18, colour="black",face = "bold"),
+        panel.border = element_rect(size = 1.5, colour = "black"),
+        legend.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+        legend.text = element_text(size=13),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+PCA_plot
+
+#### UMAP gprob ####
+
+#col17 <- pal_d3(palette='category20')(20)[c(1:5,7,9:17,19,20)]
+umap_g_plot <- ggplot(data = umap_g, aes(x=layout1,y=layout2,fill=as.character(Pop))) +
+  geom_point(colour='black',size = 4,pch=21) + ggtitle("UMAP gprobs") +
+  xlab('Layout 1') + ylab('Layout 2') +
+#scale_fill_manual(values = col17) +
+  scale_fill_d3(palette = 'category20') +
+  theme_bw() +
+  theme(legend.position = 'none', #removes legend
+        plot.title = element_text(size = 18, colour="black"),
+        axis.text = element_text(size=16),
+        axis.title = element_text(size = 18, colour="black",face = "bold"),
+        panel.border = element_rect(size = 1.5, colour = "black"),
+        legend.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+        legend.text = element_text(size=13),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+umap_g_plot
+
+#### UMAP tracy widom ####
+
+#col17 <- pal_d3(palette='category20')(20)[c(1:5,7,9:17,19,20)]
+umap_tw_plot <- ggplot(data = umap_tw_pcs, aes(x=layout1,y=layout2,fill=as.character(Pop))) +
+  geom_point(colour='black',size = 4,pch=21) + ggtitle(paste0("UMAP tw, ",ncol(pca_out$pca_df)," PC axes")) +
+  xlab('Layout 1') + ylab('Layout 2') +
+# scale_fill_manual(values = col17) +
+  scale_fill_d3(palette = 'category20') +
+  theme_bw() +
+  theme(legend.position = 'none', #removes legend
+        plot.title = element_text(size = 18, colour="black"),
+        axis.text = element_text(size=16),
+        axis.title = element_text(size = 18, colour="black",face = "bold"),
+        panel.border = element_rect(size = 1.5, colour = "black"),
+        legend.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+        legend.text = element_text(size=13),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+umap_tw_plot
+
+#### UMAP 10 pcs ####
+
+#col17 <- pal_d3(palette='category20')(20)[c(1:5,7,9:17,19,20)]
+umap_ten_plot <- ggplot(data = umap_ten_pcs, aes(x=layout1,y=layout2,fill=as.character(Pop))) +
+  geom_point(colour='black',size = 4,pch=21) + ggtitle("UMAP 10 PC axes") +
+  xlab('Layout 1') + ylab('Layout 2') +
+# scale_fill_manual(values = col17) +
+  scale_fill_d3(palette = 'category20') +
+  theme_bw() +
+  theme(legend.position = 'none', #removes legend
+        plot.title = element_text(size = 18, colour="black"),
+        axis.text = element_text(size=16),
+        axis.title = element_text(size = 18, colour="black",face = "bold"),
+        panel.border = element_rect(size = 1.5, colour = "black"),
+        legend.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+        legend.text = element_text(size=13),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+umap_ten_plot
+
+### Combine plots ####
+
+all_plots <- ggarrange(PCA_plot,umap_tw_plot,umap_ten_plot,ncol=3)
+all_plots
+
+ggsave('PIMU_PCA_UMAP.pdf',all_plots,height=5,width = 20,units = 'in')
