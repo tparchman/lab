@@ -41,7 +41,7 @@ library(ggpubr)
 First need to set up an API with google inorder to access their maps Feel free to use my (TFaske) key
 
 ```{r eval=FALSE}
-register_google('AIzaSyDVcjLPd2Kp2CQrfFKqpZcIJvmARnBRXcY')
+register_google('HIDE')
 ggmap_hide_api_key()
 google_key()
 ```
