@@ -1,0 +1,5 @@
+new("pcaProject", projDir = "/Users/thomasparchman/Desktop/files/rainbow_trout/analyses_plots/UMAP/", 
+    pcaDir = "temp.pca/", n = 150L, L = 12807L, K = 150L, center = FALSE, 
+    scale = FALSE, pcaProject.file = "temp.pcaProject", input.file = "temp.lfmm", 
+    eigenvalue.file = "temp.eigenvalues", eigenvector.file = "temp.eigenvectors", 
+    sdev.file = "temp.sdev", projection.file = "temp.projections")
