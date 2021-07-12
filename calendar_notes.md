@@ -14,3 +14,7 @@
 
 ### Jahner
 - Laramie 6/23 - 7/12 (last day in steamboat with heather)
+
+### Hallas
+- out of service 7/11 - 7/22
+- out of service 9/8 - 9/16
