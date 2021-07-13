@@ -18,3 +18,11 @@
 ### Hallas
 - out of service 7/11 - 7/22
 - out of service 9/8 - 9/16
+
+
+## Trevor
+- Earthwatch Tucson, AZ: 7/15 - 7/29
+- GAIN bootcamp: 8/9 - 8/13
+- Climbing: 8/19 - 8/22
+- Wedding: 9/11
+- Conservation Genetic conference (Snowbird, UT): 10/10 - 10/13
