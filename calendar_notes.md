@@ -26,3 +26,8 @@
 - Climbing: 8/19 - 8/22
 - Wedding: 9/11
 - Conservation Genetic conference (Snowbird, UT): 10/10 - 10/13
+
+## Katie
+- Botany: 7/19 - 7/22
+- Thomas in town: 7/28 - 8/18
+- Fall semester begins: 8/23
