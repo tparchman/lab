@@ -15,15 +15,10 @@ vcftools --remove-indels --max-missing 0.4 --missing-indv --min-alleles 2 --max-
 
 mawk '$5 > 0.5' out.imiss | cut -f1 > lowDP.indv
 
-vcftools --vcf Poa_filter3.recode.vcf --remove lowDP.indv --recode --recode-INFO-all --out variants_clean.recode.vcf
+vcftools --vcf Poa_filter3.recode.vcf --remove lowDP.indv --recode --recode-INFO-all --out variants_clean
 
-vcftools --vcf variants_clean.recode.vcf.recode.vcf --out Poa_filtered_final --remove-filtered-all --maf 0.01 --max-missing 0.4 --recode --thin 5
+vcftools --vcf variants_clean.recode.vcf --out Poa_filtered_final --remove-filtered-all --maf 0.01 --max-missing 0.4 --recode --thin 5
 
-
-### 
-After filtering, kept 260 out of 260 Individuals
-After filtering, kept 9453 out of a possible 10034 Sites
-###
 ```
 
 PCA following Trevor Faske:
