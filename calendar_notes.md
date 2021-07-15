@@ -31,3 +31,6 @@
 - Botany: 7/19 - 7/22
 - Thomas in town: 7/28 - 8/18
 - Fall semester begins: 8/23
+
+## Lanie
+- no plans for certain. Will update accordingly.
