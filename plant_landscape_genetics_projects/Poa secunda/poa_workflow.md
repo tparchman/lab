@@ -1,10 +1,14 @@
 
+### Poa secunda
+  
+## {.tabset}
+### Workflow
+
 Variant calling:
 
 ```{r eval=FALSE}
 denovo_map.pl --samples /archive/parchman_lab/rawdata_to_backup/GSAF_11_20_bc_parse/POSE -T 5 -O /working/mascaro/pose/pop_map -m 3 -M 2 -n 2 -S -b 1
 populations -b 1 -P /working/mascaro/pose -t 12 -M /working/mascaro/pose/pop_map --max_obs_het 0.65 -r 0.80 --vcf
-
 ```
 
 Variant filtering:
@@ -22,7 +26,6 @@ vcftools --vcf variants_clean.recode.vcf --out Poa_filtered_final --remove-filte
 ```
 
 PCA following Trevor Faske:
-
 
 ```{r eval=FALSE}
 library(data.table)
@@ -169,4 +172,31 @@ ggsave("/Poa secunda/Poa filtro/pca3vs4.pdf",PCA3VS4,height=8,width = 12,units =
 
 all_plots <- ggarrange(PCA1VS2,PCA2VS3,PCA3VS4, align='hv')
 ggsave("Poa secunda/pca todas/all.pdf",all_plots,height=8,width = 12,units = 'in')
+```
+
+
+### Preliminary results
+
+**PCA with the full dataset:** 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE,out.width='100%', fig.align="center"}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("EBImage")
+library("EBImage")
+setwd("/home/caro/Escritorio/figures_Poa/")
+net_name1 <- list.files(path="/home/caro/Escritorio/figures_Poa/", pattern = "png")
+display(readImage(net_name1, "PNG"), method="browser")
+```
+
+**PCA with individuals filtered:** 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE,out.width='100%', fig.align="center"}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("EBImage")
+library("EBImage")
+setwd("/home/caro/Escritorio/figures_Poa/Poa_filtered")
+net_name1 <- list.files(path="/home/caro/Escritorio/figures_Poa/Poa_filtered", pattern = "png")
+display(readImage(net_name1, "PNG"), method="browser")
 ```
