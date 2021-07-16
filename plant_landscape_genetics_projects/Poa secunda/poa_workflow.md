@@ -1,8 +1,4 @@
-
-### Poa secunda
-  
-## {.tabset}
-### Workflow
+### Poa secunda: Workflow
 
 Variant calling:
 
@@ -172,31 +168,4 @@ ggsave("/Poa secunda/Poa filtro/pca3vs4.pdf",PCA3VS4,height=8,width = 12,units =
 
 all_plots <- ggarrange(PCA1VS2,PCA2VS3,PCA3VS4, align='hv')
 ggsave("Poa secunda/pca todas/all.pdf",all_plots,height=8,width = 12,units = 'in')
-```
-
-
-### Preliminary results
-
-**PCA with the full dataset:** 
-
-```{r echo=FALSE, message=FALSE, warning=FALSE,out.width='100%', fig.align="center"}
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install("EBImage")
-library("EBImage")
-setwd("/home/caro/Escritorio/figures_Poa/")
-net_name1 <- list.files(path="/home/caro/Escritorio/figures_Poa/", pattern = "png")
-display(readImage(net_name1, "PNG"), method="browser")
-```
-
-**PCA with individuals filtered:** 
-
-```{r echo=FALSE, message=FALSE, warning=FALSE,out.width='100%', fig.align="center"}
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install("EBImage")
-library("EBImage")
-setwd("/home/caro/Escritorio/figures_Poa/Poa_filtered")
-net_name1 <- list.files(path="/home/caro/Escritorio/figures_Poa/Poa_filtered", pattern = "png")
-display(readImage(net_name1, "PNG"), method="browser")
 ```
