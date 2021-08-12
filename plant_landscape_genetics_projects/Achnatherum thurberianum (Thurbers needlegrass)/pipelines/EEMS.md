@@ -74,57 +74,26 @@ datapath = ./data/inputdata
 mcmcpath = ./data/outputdata
 nIndiv = 300
 nSites = 3000
-nDemes = 200
+nDemes = 261
 diploid = false
 numMCMCIter = 2000000
 numBurnIter = 1000000
 numThinIter = 9999
 
 ./runeems_snps --params configurationfile.ini --seed 123 (randome seed, it's optional)
+./runeems_snps --params configurationfile2.ini --seed 123 
+./runeems_snps --params configurationfile3.ini --seed 123 
+
 ```
 
 EEMS results visualization:
 
 ```{r eval=FALSE}
 #install_github("dipetkov/eems/plotting/rEEMSplots")
-#remotes::install_github("dipetkov/reemsplots2")
-setwd("../EEMS/")
-library("rgdal")   
-library(devtools)    
 library(rEEMSplots)
-library(rworldxtra)
-library(reemsplots2)
-library(ggplot2)
-mcmcpath = "library(rEEMSplots)"
-mcmcpath = "../EEMS/"
-plotpath = "../EEMS/"
-datapath <- file.path("../EEMS/", "filesname")
 
-coord__long_lat <- read.table(paste0('file', ".coord"))
-projection_none<-"+proj=longlat +datum=WGS84"
-projection_mercator<-"+proj=merc +datum=WGS84"
+mcmcpath <- c("./eems_output/output_1", "./eems_output/output_2", "./eems_output/output_3")
+plotpath = (""./eems_output/plots"")
 
-# Produce the five EEMS figures, with default values for all optional parameters
-eems.plots(mcmcpath = "../EEMS/",plotpath = paste0("-default"),longlat = TRUE)
-
-# Add a high-resolution geographic map
-eems.plots(
-mcmcpath = "../EEMS/",
-plotpath = paste0("-geographic-map"),
-longlat = TRUE,
-projection.in = projection_none,
-projection.out = projection_mercator,
-add.map = TRUE,
-col.map = "black",
-lwd.map = 5)
-
-# Add the map explicitly by passing the shape file
-map_world <- getMap()
-map_na <- map_world[which(map_world@data$continent == "North America"), ]
-eems.plots(
-mcmcpath = "/home/caro/Documentos/EEMS/eems/runeems_snps/src/condiploidesy300demes/",
-plotpath = paste0("-shapefile"),
-longlat = TRUE,
-m.plot.xy = {plot(map_na, col = NA, add = TRUE)},
-q.plot.xy = {plot(map_na, col = NA, add = TRUE)})
+eems.plots(mcmcpath, plotpath, longlat = TRUE, add.grid = TRUE, add.demes = TRUE, add.outline = TRUE, col.outline = "black", lwd.outline = 2, col.demes = "red", pch.demes =5, min.cex.demes = 0.5, max.cex.demes =1.5)
 ```
