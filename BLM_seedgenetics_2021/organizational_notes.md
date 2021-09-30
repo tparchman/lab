@@ -25,5 +25,7 @@ Make list of Populations to order (go for 20-30 seeds per pop if possible, reali
 
 
 ## order a shit ton of silica and prepare many genetics sampling kits.
-- coin envelopes
-- silica: order number: 
+- coin envelopes, order from amazon
+- silica, order from SIGMA aldrich
+214396-5KG                SILICA GEL, GRADE 12, 28-200 MESH
+BCCC3026                 2811.22.1000 / US / 49453765
