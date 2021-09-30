@@ -7,8 +7,12 @@
 - Look at climate data for STTH populations to decide among 
 
 ## GRIN
-- Check proposal
-- Make list of 
+Make list of Populations to order (go for 20-30 seeds per pop if possible, realize it might not be):
+- CHDO:
+- STTH:
+- BASA:
+- ELEL:
+
 
 ## Commercial Seed
 - Order where available
