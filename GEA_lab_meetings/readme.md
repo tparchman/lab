@@ -5,13 +5,18 @@
 
 ### 10/8 - Forester et al. 2016; 2018; Capanblanq et al. 2018
 
-### 10/15 - Environmental data visualization, etc.
-  - Hallas/Trevor share code 
+### 10/15 Working with environmental data
 
-### 10/22 - GF genetic offset paper results. Lets read one, but place a few other good ones.
+Downloading and summarizing environmental and soil data, dealing with multicolinearity
+  - Walk through code for Pinus muricata?
+
+Visualizing environmental variation - maps, plotting, etc.
+ - Trevor, Hallas map code
+ - 
+
+### 10/29 - GF genetic offset paper results. Lets read one, but place a few other good ones.
 Keller and Fitzpatrick papers.
 
-### 10/29
 
 ### 11/5
 
