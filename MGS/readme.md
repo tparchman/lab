@@ -27,37 +27,56 @@ After MGS.clean.fastq has been produced, clean out duplicate raw data:
  
 Number of reads **before** cleaning:
 
-    $ grep -c "^@" MGS-1_S1_L001_R1_001.fastq > number_of_rawreads.txt
+    $ grep -c "^@" MGS-1_S1_L001_R1_001.fastq > number_of_rawreads.txt &
     $ less number_of_rawreads.txt
-    # 2,113,546,977
+    # 2,256,351,365
     
 Number of reads **after** cleaning:
 
-    $ grep -c "^@" MGS.clean.fastq > number_of_cleanreads.txt
+    $ grep -c "^@" MGS.clean.fastq > number_of_cleanreads.txt &
     $ less number_of_cleanreads.txt
-    # 1,675,695,246
+    # 1,707,635,152
         
 ## Barcode parsing:
 
-Barcode keyfile is `/working/parchman/MGS/XXXXXXXXX_bcode.csv`
+Barcode keyfile is `/working/parchman/MGS/barcodeKey_lib9_mojaveGroundSquirrels.csv`
   
-    $ perl parse_barcodes768.pl final_timema3_Piper1_bcode.csv MGS.clean.fastq A00 &
+    $ perl parse_barcodes768.pl barcodeKey_lib9_mojaveGroundSquirrels.csv MGS.clean.fastq A00 &
 
 `NOTE`: the A00 object is the code that identifies the sequencer (first three characters after the @ in the fastq identifier).
 
-    $ less parsereport_tpodura.clean.fastq
-    #Good mids count: 1617562664
-    #Bad mids count: 58132389
-    #Number of seqs with potential MSE adapter in seq: 305112
-    #Seqs that were too short after removing MSE and beyond: 193
+    $ less parsereport_MGS.clean.fastq
+    #Good mids count: 
+    #Bad mids count: 
+    #Number of seqs with potential MSE adapter in seq: 
+    #Seqs that were too short after removing MSE and beyond: 
           
 Cleaning up the directory:
 
-    $ rm tpodura.clean.fastq
-    $ rm miderrors_tpodura.clean.fastq
-    $ rm parsereport_tpodura.clean.fastq
-    
-Total reads for T. podura (598 individuals)
+    $ rm MGS.clean.fastq
+    $ rm miderrors_MGS.clean.fastq
+    $ rm parsereport_MGS.clean.fastq
+
+## Splitting fastq by individual ID
+
+Make ids file
+
+    $ cut -f 3 -d "," barcodeKey_lib9_mojaveGroundSquirrels.csv | grep "_" > MGS_ids_noheader.txt
+    # Note: 522 individuals
+
+# Done to here 10.26.21
+
+Split fastqs by individual, put in a new directory
+
+    $ mkdir raw_fastqs
+    $ perl splitFastq_universal_regex.pl MGS_ids_noheader.txt parsed_MGS.clean.fastq &
+
+Zip the parsed*fastq files for now, but delete once patterns and qc are verified:
+
+    $ gzip parsed_S1_11_20.clean.fastq
+
+
+Total reads for mojave ground squirrels (XXX individuals)
 
     $ grep -c "^@" raw_fastqs/*fastq > seqs_per_ind.txt
 
