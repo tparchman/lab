@@ -46,10 +46,10 @@ Barcode keyfile is `/working/parchman/MGS/barcodeKey_lib9_mojaveGroundSquirrels.
 `NOTE`: the A00 object is the code that identifies the sequencer (first three characters after the @ in the fastq identifier).
 
     $ less parsereport_MGS.clean.fastq
-    #Good mids count: 
-    #Bad mids count: 
-    #Number of seqs with potential MSE adapter in seq: 
-    #Seqs that were too short after removing MSE and beyond: 
+    #Good mids count: 1650772395
+    #Bad mids count:    56862513
+    #Number of seqs with potential MSE adapter in seq: 444911
+    #Seqs that were too short after removing MSE and beyond: 244
           
 Cleaning up the directory:
 
