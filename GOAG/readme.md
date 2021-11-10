@@ -1,9 +1,9 @@
-## Mojave Ground Squirrel analysis notes
+## Desert tortoise analysis notes
 
-### Notes on contaminant cleaning and barcode parsing 10-21
+### Notes on contaminant cleaning and barcode parsing 10-30
 
 `NOTE`: One library was sequenced on one Novaseq lane in late September of 2021
-`NOTE`: Contaminant cleaning and barcode parsing in `/working/parchman/MGS/`
+`NOTE`: Contaminant cleaning and barcode parsing in `/working/parchman/GOAG/`
 
 ### This file contains code and notes for
 1) cleaning contaminants using tapioca
@@ -21,25 +21,27 @@ Being executed on ponderosa using tapioca pipeline. Commands in bash script, exe
     $ module load bowtie2/2.2.5
     $ bash cleaning_bash.sh &
 
-After MGS.clean.fastq has been produced, clean out duplicate raw data:
+After GOAG.clean.fastq has been produced, clean out duplicate raw data:
 
-    $ rm -rf MGS-1_S1_L001_R1_001.fastq
+    $ rm -rf GOAG-lib10_S1_L001_R1_001.fastq
  
 Number of reads **before** cleaning:
 
-    $ grep -c "^@" MGS-1_S1_L001_R1_001.fastq > number_of_rawreads.txt
+    $ grep -c "^@" GOAG-lib10_S1_L001_R1_001.fastq > number_of_rawreads.txt
     $ less number_of_rawreads.txt
-    # 2,113,546,977
+    # 
     
 Number of reads **after** cleaning:
 
-    $ grep -c "^@" MGS.clean.fastq > number_of_cleanreads.txt
+    $ grep -c "^@" GOAG.clean.fastq > number_of_cleanreads.txt
     $ less number_of_cleanreads.txt
-    # 1,675,695,246
-        
+    # 
+
+# Done to here 11/9/21
+
 ## Barcode parsing:
 
-Barcode keyfile is `/working/parchman/MGS/XXXXXXXXX_bcode.csv`
+Barcode keyfile is `/working/parchman/GOAG/XXXXXXXXX_bcode.csv`
   
     $ perl parse_barcodes768.pl final_timema3_Piper1_bcode.csv MGS.clean.fastq A00 &
 
