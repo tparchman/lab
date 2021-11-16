@@ -29,7 +29,7 @@ Number of reads **before** cleaning:
 
     $ grep -c "^@" GOAG-lib10_S1_L001_R1_001.fastq > number_of_rawreads.txt
     $ less number_of_rawreads.txt
-    # 
+    # 2352951075
     
 Number of reads **after** cleaning:
 
@@ -37,29 +37,48 @@ Number of reads **after** cleaning:
     $ less number_of_cleanreads.txt
     # 
 
-# Done to here 11/9/21
-
 ## Barcode parsing:
 
 Barcode keyfile is `/working/parchman/GOAG/XXXXXXXXX_bcode.csv`
   
-    $ perl parse_barcodes768.pl final_timema3_Piper1_bcode.csv MGS.clean.fastq A00 &
+    $ perl parse_barcodes768.pl barcodeKey_CLEAN_desertTortoises.csv GOAG.clean.fastq A00 &
 
 `NOTE`: the A00 object is the code that identifies the sequencer (first three characters after the @ in the fastq identifier).
 
-    $ less parsereport_tpodura.clean.fastq
-    #Good mids count: 1617562664
-    #Bad mids count: 58132389
-    #Number of seqs with potential MSE adapter in seq: 305112
-    #Seqs that were too short after removing MSE and beyond: 193
-          
+    $ less parsereport_GOAG.clean.fastq
+    #Good mids count: 1549613635
+    #Bad mids count: 52409522
+    #Number of seqs with potential MSE adapter in seq: 448456
+    #Seqs that were too short after removing MSE and beyond: 137
+
+
 Cleaning up the directory:
 
-    $ rm tpodura.clean.fastq
-    $ rm miderrors_tpodura.clean.fastq
-    $ rm parsereport_tpodura.clean.fastq
-    
-Total reads for T. podura (598 individuals)
+    $ rm GOAG.clean.fastq
+    $ rm miderrors_GOAG.clean.fastq
+    $ rm parsereport_GOAG.clean.fastq
+
+
+## Splitting fastq by individual ID
+
+Make ids file
+
+    $ cut -f 3 -d "," barcodeKey_CLEAN_desertTortoises.csv | grep "_" > GOAG_ids_noheader.txt
+    # Note: 698 individuals
+
+
+Split fastqs by individual, put in a new directory
+
+    $ mkdir raw_fastqs
+    $ perl splitFastq_universal_regex.pl GOAG_ids_noheader.txt parsed_GOAG.clean.fastq &
+
+Zip the parsed*fastq files for now, but delete once patterns and qc are verified:
+
+    $ gzip GOAG.clean.fastq
+
+# Done to here 11/16/21
+
+Total reads for GOAG (698 individuals)
 
     $ grep -c "^@" raw_fastqs/*fastq > seqs_per_ind.txt
 
