@@ -1,0 +1,92 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
+---
+title: "Code for plotting Map of KRLA collections"
+author: "TL Parchman"
+output: html_document
+---
+
+#### Setting some formatting options for markdown document.
+Code below sets chunk width so code wraps and doesn't run off the page
+```{r}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+
+```
+
+
+## Making a map
+
+Code for map of current sampling for population genetic analyses of *Krascheninnikovia lanata* (KRLA). Catherine Siliman and other folks from Beth Leger's team have collected seed and/or tissue from 16 populations thus far; we hope to expand sampling to cover a larger portion of the range. These samples, however, will allow us to generate RADseq data for preliminary analyses of how diversity, differentiation, and local adaptation to environment vary across this portion of the distribution.
+
+
+### Loading necessary libraries
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(ggmap)
+library(devtools)
+require(ggplot2)
+require(ggsci)
+require(ggrepel)
+library(data.table)
+library(patchwork)
+```
+
+## Making maps using the stamenmap layers for ggmap
+
+First need to set up an API with google in order to access their maps. Using (TFaske) key for now
+
+```{r eval=FALSE, echo=TRUE}
+register_google('HIDE')
+ggmap_hide_api_key()
+google_key()
+```
+
+Map data should have IDs for each population along with latitude and longitude. Here I am reading a .csv file with latitude and longitude for each sampled location.
+
+```{r}
+KRLAcoord <- read.csv('KRLA_latlong_formap.csv', header=T)
+names(KRLAcoord) <- c('Name','Pop','Lat','Long')
+
+```
+### 1. Get the google map, set dimensions based on lat and long. 
+- play with the `zoom` and `maptype`
+- Here using the `get_stamenmap` function which accesses a diversity of map options. The terrain is far superior to base ggmap.
+- `zoom` and `scale` controls resolution, `zoom=10` takes forever. Changing these influences the resolution and inclusions of certain features on map. Play and see.
+
+Code below gets map and sets boundary.
+
+```{r eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+
+map <- get_stamenmap(bbox = c(left = -120.4, bottom = 37.15, right = -116.75, top = 41.8),
+zoom=8,scale = 3,maptype = 'terrain-background')
+##zoom controls resolution, 10 takes forever
+```
+### 2. Code below plots points on Map with labels by Population 
+```{r eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+
+map <- ggmap(map) +
+geom_point(data = KRLAcoord, aes(x = Long, y = Lat),size=2,col="black",fill='white',pch=21) +
+geom_label_repel(data = KRLAcoord, aes(x = Long, y = Lat,label = Pop,fill=Pop),
+colour = "black", fontface = "bold") +
+scale_fill_d3(palette = 'category20') +
+coord_map(xlim=c(-120.4,-116.75),ylim=c(37.15,41.8)) +
+xlab("Longitude") + ylab("Latitude") + theme_bw() +
+theme(legend.position = 'none',
+axis.text = element_text(size=13),
+axis.title = element_text(size = 15, colour="black",face = "bold", vjust = 1),
+panel.border = element_rect(size = 1.5, colour = "black"),
+panel.grid.major = element_blank(),
+panel.grid.minor = element_blank())
+map
+
+```
+
+
+### 3. Saving map to a pdf file
+```{r eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+ggsave('map_KRLA_stamenterrain.pdf',height=8,width=5)
+```
