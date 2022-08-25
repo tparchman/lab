@@ -90,15 +90,77 @@ Below will install the most current version of bwa available from `bioconda`
 ### Building additional environments to keep dependencies clean
 
  You will likely want to build different conda environments for different software installs to keep dependencies clean. `Ipyrad` is an example of where we have built separate environments.
+
+ ## SLURM + HPC
+Slurm is an open source, fault-tolerant, and highly scalable cluster management and job scheduling system for large and small Linux clusters. Slurm requires no kernel modifications for its operation and is relatively self-contained. As a cluster workload manager, Slurm has three key functions. First, it allocates exclusive and/or non-exclusive access to resources (compute nodes) to users for some duration of time so they can perform work. Second, it provides a framework for starting, executing, and monitoring work (normally a parallel job) on the set of allocated nodes. Finally, it arbitrates contention for resources by managing a queue of pending work.  Web resources: [Slurm website](https://slurm.schedmd.com/overview.html) and [quick cheat sheet](https://slurm.schedmd.com/pdfs/summary.pdf)
+
+*IMPORTANT: always know how much memory and CPUs are avaiable for HPC in order to optimize analyses.* 
+
+**The BioNRES node 68 has:**
+* 192 GB physical memory. 
+  * However, 24 GB are reserved for processes, which means there is roughly 5GB per core.
+  * Allocation of memory is important for BioNRES becuase if a user is running a job with 16 cores but uses all the memory than the other 16 cores cannot be used by another user.
+* 32 cores / 64 threads
+  * We can use threading on BioNRES but can't use MPI because the account only allows use of one node.  This is dependant upon how you allocate resources. (i.e. `--ntasks` and `--cpus-per-task`).  In addition, `--hint=compute_bound` allows only one thread per cpu.  With this option enabled only 32 threads can be activated.  To run more than 32 threads don't include `--hint=compute_bound`.  The benefit of `--hint=compute_bound` is that it doesn't allow another job to use a thread on a CPU currently being used, which can slow an analysis.  Or at least that is what I understand from Sebastian.  
+
+  **It is might be best to check allocation of resources with John Anderson before submitting a job.**
+
+    *   Thread Example:
+        ```
+        #SBATCH --ntasks 1
+        #SBATCH --cpus-per-task 32
+        ```
+    *   MPI Example:
+         ```
+        #SBATCH --ntasks 64
+        #SBATCH --cpus-per-task 1
+        ```
+## Anatomy of a `slurm` wrapper
+
+`slurm` submission files are bash scripts that:
+
+* specify computational resources and time needed to run a batch of jobs
+* load necessary software modules
+* specify the commands to run, specifying input and output locations.
+
+  
+*Example of Slurm resource allocation submission file.*
+```
+#!/usr/bin/env bash
+#SBATCH --account=cpu-s1-bionres-0
+#SBATCH --partition=cpu-s1-bionres-0
+#SBATCH --mail-type=FAIL
+#SBATCH --mail-type=END
+#SBATCH --mail-user=
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=32
+#SBATCH --hint=compute_bound
+#SBATCH --mem-per-cpu=2400
+#SBATCH --job-name=
+#SBATCH --output=
+```
+## executing `slurm` wrapper
+
+    $ sbatch bwa_batch.sh
+
+Common Slurm Commands
+<!-- Tables -->
+| Description  | Command |
+| -------------------|-------------------|
+| Run analysis | sbatch [file name] |
+| Pulls job ids | squeue -u [account name] |
+| Check status  info on cpus | scontrol show job -d [job id] |
+| Kill job | scancel [job id] |
+| Check CPU load and memory  | sinfo --nodes=cpu-[number] --Format="CPUsLoad,FreeMem"|
+
+
  
  ## running jobs through the queue on pronghorn using `slurm`
  
  ### different resources for parchman lab on pronghorn, both free and not so free
  
- ### anatomy of a slurm wrapper
- 
- ### executing `slurm` wrapper
- 
+
  ### monitoring your jobs
  To check status after job is started
 
@@ -106,7 +168,7 @@ Below will install the most current version of bwa available from `bioconda`
 
 To check status with info on cpus
 
-    $   scontrol show job -d <JOBID>
+    $ scontrol show job -d <JOBID>
 
 To kill job:
 

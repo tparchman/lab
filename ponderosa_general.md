@@ -52,7 +52,7 @@ To look at disc space (total, avialable, and used):
 
 Monitor disc usage
 
-    $ du h 
+    $ du -h 
 
 To check the usage for each user within a certain directory
 
@@ -76,7 +76,7 @@ Example of using tar to decompress:
 
 ### More specific, but commonly useful commands
 
-running jobs in background wihtout interupt
+running jobs in background without interupt
     
     $ nohup <COMMANDS> &>/dev/null &
     
@@ -128,4 +128,35 @@ When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you
 	    $ cat id_rsa.pub >> authorized_keys
 
 	or just copy the line of interest in id_rsa.pub and copy it into authorized keys using nano, emacs, or vim.
+
+## For sudo only: setting up user accounts
+
+### Example user add, for Libby Beckman (MVZ group)
+
+Use `sudo` to activate account, set working directory
+
+    $ sudo useradd -m -s /bin/bash -c "Libby Beckman, Parchman Group" -G users,working beckman
+
+this adds a new user, beckman:
+
+- `m` creates home directory and copies files from /etc/skel
+- `s` /bin/bash: makes bash the default shell
+- `c` "beckman, Parchman Group" adds comment to /etc/passwd file
+- `G` users, working adds user to secondary group working.
+
+Set passwd:
+ 
+    $ sudo passwd beckman
+ 
+Set her passwd to G00gle_it (temporary)
+
+Age passwork so user will have to change the first time they login
+
+    $ sudo chage -m 10 beckman
+
+Then to login: 
+
+    $ ssh beckman@ponderosa.biology.unr.edu
+    password: G00gle_it (temporary; those are zeros not ones.)
+    change during first login.
 
