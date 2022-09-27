@@ -33,6 +33,8 @@ TZ tests performed on roughly half of all population source
     + restoration planted - **no**
     + per acre yield **54.4**
     + Beth may have bags on hand
+    + Based on weight of input seeds, seems likely this is *mostly tetraploid*? - single population makes up more than half of total source
+    
 ## Ploidy
 Mixed-ploidy mixes had much lower growout yield relative to the 1 tetraploid mix (Zone 11)
 Tetraploid and octoploid races considered *relatively* allopatricin wild (see Jones et al. 2009)
@@ -41,6 +43,16 @@ Tetraploid and octoploid races considered *relatively* allopatricin wild (see Jo
 * ploidy overlap in NV, OR, and northeast CA  
   
 Octoploid-tetraploid crossing produces high level of sterile hexaploids (did I read this somewhere specifically?)
+## Design Ideas
+### Using existant mixes Zone 12 & 16
+**Identify ploidy levels of mix**
+* Greenhouse growout (individual seeds? N=1000)
+    + Subsample from individuals that germinate and test ploidy
+    + **ISSUE**: would there be ploidy bias in greenhouse germination rates?  
+
+**Plant mixes in different restoration environments**
+* 2x3 design (2 mixes, 3 sites)
+    + If we can source other seeds, develop specific mixes of ploidy (e.g. 1 tetraploid dominant, 1 octoploid dominant?)
 ## Strategies
 * Identify any restoration plantings with these mixes
     + Seems like Zone 8 and Zone 11 were planted somewhere...when?
@@ -67,3 +79,4 @@ Would we need to grow out any seed mix in controlled environment to determine ge
 Consider both effects of ploidy and population differences (also consider relative to PSZs?)
 
 
+Can we buy seeds granite? SNS? BFI? Comstock? 3 collections? what do you have, where do they come from, what is the ploidy? KRLA ELEL CHDO ACTE 
