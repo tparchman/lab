@@ -33,6 +33,7 @@ require(ggsci)
 require(ggrepel)
 library(data.table)
 library(patchwork)
+library(RColorBrewer)
 ```
 
 ## Making maps using the stamenmap layers for ggmap
@@ -55,25 +56,29 @@ names(KRLAcoord) <- c('Name','Pop','Lat','Long')
 ### 1. Get the google map, set dimensions based on lat and long. 
 - play with the `zoom` and `maptype`
 - Here using the `get_stamenmap` function which accesses a diversity of map options. The terrain is far superior to base ggmap.
-- `zoom` and `scale` controls resolution, `zoom=10` takes forever. Changing these influences the resolution and inclusions of certain features on map. Play and see.
+- `zoom` and `scale` (`scale` is adjusting tiling somehow? Removed for the moment since I can't detect differences...) controls resolution, `zoom=10` takes forever. Changing these influences the resolution and inclusions of certain features on map. Play and see.
 
 Code below gets map and sets boundary.
 
 ```{r eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 
-map <- get_stamenmap(bbox = c(left = -120.4, bottom = 37.15, right = -116.75, top = 41.8),
-zoom=8,scale = 3,maptype = 'terrain-background')
+map <- get_stamenmap(bbox = c(left = -120.8, bottom = 33.9, right = -114.2, top = 42.1),
+zoom=8, maptype = 'terrain-background')
 ##zoom controls resolution, 10 takes forever
 ```
 ### 2. Code below plots points on Map with labels by Population 
 ```{r eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 
+##adding function to adjust palette size as points are added
+colorCnt = length(KRLAcoord$Pop)
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
 map <- ggmap(map) +
 geom_point(data = KRLAcoord, aes(x = Long, y = Lat),size=2,col="black",fill='white',pch=21) +
 geom_label_repel(data = KRLAcoord, aes(x = Long, y = Lat,label = Pop,fill=Pop),
 colour = "black", fontface = "bold") +
-scale_fill_d3(palette = 'category20') +
-coord_map(xlim=c(-120.4,-116.75),ylim=c(37.15,41.8)) +
+scale_fill_manual(values = getPalette(colorCnt)) +
+coord_map(xlim=c(-120.8,-114.2),ylim=c(33.9,42.1)) +
 xlab("Longitude") + ylab("Latitude") + theme_bw() +
 theme(legend.position = 'none',
 axis.text = element_text(size=13),
