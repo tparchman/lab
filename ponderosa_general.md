@@ -160,5 +160,5 @@ Then to login:
     password: G00gle_it (temporary; those are zeros not ones.)
     change during first login using:
 
-    $ pwd newpassword
+    $ passwd newpassword
 
