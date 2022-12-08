@@ -22,7 +22,7 @@ Using `anaconda` will allow you to install all of the programs you need on prong
 
 - [conda user guide](https://conda.io/projects/conda/en/latest/user-guide/index.html)
 
--[Anaconda documentation](https://docs.anaconda.com/)
+- [Anaconda documentation](https://docs.anaconda.com/)
 
 ## Installing an up-to-date Anaconda distribution
 
