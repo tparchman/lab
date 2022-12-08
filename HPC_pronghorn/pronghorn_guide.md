@@ -18,7 +18,7 @@ Containers or environments must be used on pronghorn to install and run user spe
 
 # Quick guide to installing and using `anaconda` environments on pronghorn
 
-Using `anaconda` will allow you to install all of the programs you need on pronghorn, any other remote compute node, or your personal computer. Below are some commonly used and useful commands for installing, building environments, setting up channels, installing packages within environments, and copying and transporting environment containers. For exellent and more complete documentation see:
+Using `anaconda` will allow you to install all of the programs you need on pronghorn, any other remote compute node, or your personal computer. Below are some commonly used and useful commands for installing, building environments, setting up channels, installing packages within environments, and copying and transporting environment containers. For excellent and more complete documentation see:
 
 - [conda user guide](https://conda.io/projects/conda/en/latest/user-guide/index.html)
 
