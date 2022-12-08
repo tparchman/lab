@@ -171,9 +171,11 @@ To make a new conda environment from a shared or existing .yml file:
 
     $ conda env create -f environmentname.yml
 
+For sharing environments in our lab, it is ideal to have the last name and date of environment author as part of the name. So, if Faske is going to share an environment with specific packages for GBS assembly/mapping and variant calling with Romero, a suggested name for a .yml file might be `GBS_bwasamtools_faske_12_22.yml`
 
 
- ## SLURM + HPC on pronghorn
+
+ ## SLURM + HPC on pronghorn (needs updating)
 Slurm is an open source, fault-tolerant, and highly scalable cluster management and job scheduling system for large and small Linux clusters. Slurm requires no kernel modifications for its operation and is relatively self-contained. As a cluster workload manager, Slurm has three key functions. First, it allocates exclusive and/or non-exclusive access to resources (compute nodes) to users for some duration of time so they can perform work. Second, it provides a framework for starting, executing, and monitoring work (normally a parallel job) on the set of allocated nodes. Finally, it arbitrates contention for resources by managing a queue of pending work.  Web resources: [Slurm website](https://slurm.schedmd.com/overview.html) and [quick cheat sheet](https://slurm.schedmd.com/pdfs/summary.pdf)
 
 *IMPORTANT: always know how much memory and CPUs are avaiable for HPC in order to optimize analyses.* 
@@ -240,7 +242,7 @@ Common Slurm Commands
  
  ## running jobs through the queue on pronghorn using `slurm`
  
- ### different resources for parchman lab on pronghorn, both free and not so free
+ ### different resources for parchman lab on pronghorn, both free and not so free (needs updating)
  
 
  ### monitoring your jobs
@@ -262,6 +264,6 @@ To kill job:
 Text here
 
 
-## Establishing connections between jupyter notebooks and pronghorn login nodes (**Trevor style**)
+## Establishing connections between jupyter notebooks and pronghorn login nodes (**Trevor style**) (needs updating)
 
 Example files for this demo can be found in this directory (list of .sh files).
