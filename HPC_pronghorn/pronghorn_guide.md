@@ -12,7 +12,7 @@ Files can be easily moved to or from here using scp or rsync.
 
     $ rsync -av muricata_fastqs tparchman@pronghorn.rc.unr.edu:/data/gpfs/assoc/parchmanlab/parchman/
 
-## Containers or environments for managing software
+# Containers or environments for managing software
 
 Containers or environments must be used on pronghorn to install and run user specific software. Using such tools means that you can control your own portable environment, and that individual users do not have to install software more generally on the system. In the Parchman lab we have been using `anaconda` environments for this. Many others are using `singularity` or `apptainer` containers.
 
