@@ -14,50 +14,58 @@ Files can be easily moved to or from here using scp or rsync.
 
 ## Containers or environments for managing software
 
-Containers or environments must be used on pronghorn to install and run user specific software. Using such tools means that you can control your own portable environment, and that individual users do not have to install software more generally on the system. In the parchman lab we have been using `anaconda` environments for this. Many others are using `singularity` containers.
+Containers or environments must be used on pronghorn to install and run user specific software. Using such tools means that you can control your own portable environment, and that individual users do not have to install software more generally on the system. In the Parchman lab we have been using `anaconda` environments for this. Many others are using `singularity` or `apptainer` containers.
 
-%difference between miniconda and anaconda
-
-### Install `anaconda` on pronghorn
+# Quick guide to installing and using `anaconda` environments on pronghorn
 
 Using `anaconda` will allow you to install all of the programs you need on pronghorn. Build within user-specific directory, e.g.: 
     
     /data/gpfs/assoc/parchmanlab/parchman/
 	
-    $ wget https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh
+    $ wget https://repo.anaconda.com/archive/Anaconda3-2022.10-Linux-x86_64.sh
     
-    $ bash Anaconda3-2020.11-Linux-x86_64.sh 
+    $ bash Anaconda3-2022.10-Linux-x86_64.sh
 
-It will make the most sense to put anaconda3 in the directory that serves as your main working directory.
+It will make the most sense to put `anaconda3` in your home directory, or perhaps another directory that serves as your main working directory.
 
-    $ rm Anaconda3-2019.10-Linux-x86_64.sh
+    $ rm Anaconda3-2022.10-Linux-x86_64.sh
 
 To activate conda either logout/log back in or:
 
     $ source .bashrc
 
-### Create your main working environment and add some channels
+## Create your main working environment and add some channels
 
-    $ conda create -n py38 python=3.8
+As you might wish to make additional environments that have different software installed, its worth thinking about what you name different environments and that you keep a clear understanding about installs and versions of different software. You can create, activate, and deactivate as many environments as you wish. `create` builds a new environment, `-n` specifies the name of that environment, and a current version of python is specified below.
 
-%describe `channels`
+    $ conda create -n py39 python=3.9
+
+Channels are the hubs where packages are stored and serve a base for managing packages. Conda packages are downloaded from remote URLs to directories within the active environment. Adding connections to channels that host the type of packages you are most interested in installing can be done as below (and the below channels are recommended?):
 
     $ conda config --add channels bioconda
     $ conda config --add channels conda-forge
     $ conda config --add channels defaults
     $ conda config --add channels r
 
-NOTE: may need to modify .condarc in order to move conda-forge and bioconda to top of list
+**NOTE:** You may need to modify `.condarc` in order to move conda-forge and bioconda to top of list, and to control channel collisions (when different package versions are hosted on different channels). You can read more about this type of issue and cirumventing problems [here](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-channels.html).
 
-### activating and deactivating environment
+## Activating and deactivating environments
 
-%need a few sentences describing [base], how to deactivate out of base, how to activate back into base, the difference between base and your environment.
+Conda has a default environment called base that include a Python installation and some core system libraries and dependencies of Conda. It is a “best practice” to avoid installing additional packages into your base software environment. Instead, keep base as is, and create new environments with different names for specific uses.
 
-%warnings about installing in base, and why you dont want to do that.
+To de-activate `base` conda:
 
-To activate your environment, use
+    $ conda deactivate
 
-    $ conda activate py38
+To re-activate:
+
+    $ conda activate
+
+For both of the above, note that an environment name isnt needed for base.
+
+To activate a custom created environment (with the name created above), use:
+
+    $ conda activate py39
 
 To deactivate an active environment, use
 
@@ -65,9 +73,19 @@ To deactivate an active environment, use
 
 Note, if you deactivate after activating your named environment, you can deactivate out of base using the same command.
 
-### conda software installs
+It is not uncommon to have multiple conda environments, or even to forget which conda environments you have and/or their specific namse. You can pull this information as below.
 
-Paragraph about considerations before choosing which version of what to install.
+    $ conda info --envs
+Or
+
+    $ conda env list
+
+### Conda software installs
+In order to keep results and workflows reproducible and to make it easier to recreate your Conda environments on different machines, it is a good idea to clearly specify the version number for each package that you install into an environment. You can use `conda search` to look for specific packages by version. Most general use of this command:
+
+    $ conda search bwa
+
+!MyImage[/md]
 
 To figure out which channel and which version of a given software you want to install, it is generally best to google what you are looking for to see what is available and what channel you want to use.
 
