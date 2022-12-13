@@ -1,10 +1,4 @@
 ---
-output:
-  html_document: default
-  pdf_document: default
----
-
----
 title: "Code for plotting Map of KRLA collections"
 author: "TL Parchman"
 output: html_document
@@ -34,6 +28,8 @@ require(ggrepel)
 library(data.table)
 library(patchwork)
 library(RColorBrewer)
+library(tidyr)
+setwd("~/Documents/GitHub/lab/romero/KRLA/")
 ```
 
 ## Making maps using the stamenmap layers for ggmap
@@ -49,7 +45,8 @@ google_key()
 Map data should have IDs for each population along with latitude and longitude. Here I am reading a .csv file with latitude and longitude for each sampled location.
 
 ```{r}
-KRLAcoord <- read.csv('KRLA_latlong_formap.csv', header=T)
+KRLAcoord <- read.csv('KRLA_latlong_formap.csv', header=T) %>%
+  subset(plated == 'y')
 names(KRLAcoord) <- c('Name','Pop','Lat','Long')
 
 ```
