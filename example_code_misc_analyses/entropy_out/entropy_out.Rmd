@@ -1,0 +1,356 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r, echo=FALSE}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+---
+title: "Function to extract entropy output and make figure"
+author: "Trevor Faske"
+output: pdf_document
+---
+
+This Rmarkdown provides a function and example code extract entropy output for any number of k and make structure-like figures.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '~/Desktop/src/R/Rmarkdown/entropy_out/')
+```
+
+### Loading packages
+
+```{r eval=TRUE, eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE}
+library(tidyverse) #i hate it too 
+library(ggsci) #color_choose
+library(patchwork) #multipanel figures
+```
+
+# entropy_out function
+
+#### inputs:    
+- **q**: q data.frame (nrow = nind*k) 
+  - entropy command ex.: `estpost *k2*.hdf5 -p q -s 0 -o q2.txt`\  
+- **MCMC**: MCMC data.frame  
+  - entropy command ex.: `estpost *k2*.hdf5 -p q -s 4 -o MCMC_k2.txt`\    
+- **k**: K value\   
+- **indv_list**: list of individual names in same order as vcf file\    
+- **pop_id**: (optional) data.frame containing information for each individual in same order as vcf file to combine anc data to and potentially color,sort figure by\  
+- **pop_id_indv**: (required if pop_id present) column name which is equal to indv_list\    
+- **figure:** (TRUE/FALSE, default = FALSE) TRUE if you want to make structure like figure\     
+- **sort_by:** (optional) column in pop_id to sort figure by (e.g. PCA1, Lat)\  
+- **group:** (optional) column in pop_id to group structure figure by (e.g. Population, Species)\  
+- **colors:** (optional) list of colors for structure figure equal to k. Default: ggsci npg for k <= 10, ggsci d3(palette='category20') for 10 < k <= 20, and ggplot default for k > 20  
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE}
+
+######################################## entropy_out function ########################################
+
+entropy_out <- function(q,MCMC,k,indv_list,pop_id=NULL,pop_id_indv=NULL,
+                        figure=TRUE,sort_by=NULL,group=NULL,colors=NULL){
+  
+  # add indv_list and MCMC summary stats to q
+  q <- q[,1:2]
+  names(q)[2] <- 'q'
+  q <- left_join(q,MCMC)
+  q[,1] <- as.character(indv_list)
+  q$Anc <- rep(paste0('A',1:k),each=length(indv_list))
+  q$ESS <- rep(paste0('ESS',1:k),each=length(indv_list))
+  q$Rhat <- rep(paste0('Rhat',1:k),each=length(indv_list))
+  
+  # join file with pop_id if present
+  if (is.null(pop_id)){
+    pop_id_indv <- 'All'
+    names(q)[1] <- pop_id_indv
+    k_out <- q
+  }else{
+    if(is.null(pop_id_indv)){
+      stop('Must provide column name in pop_id_indv')
+    }
+    names(q)[1] <- pop_id_indv
+    k_out <- left_join(pop_id,q)
+  }
+  
+  # make k_out wide (sure there is a better way to do this)
+   spec1 <- k_out %>%
+      build_wider_spec(names_from = c(Anc,ESS,Rhat), 
+                values_from = c(q,effectiveSampleSize,potentialScaleReductionFactor))
+   spec1$.name <- c(unique(k_out$Anc),unique(k_out$ESS),unique(k_out$Rhat))
+   k_out_wide <- k_out %>% 
+     pivot_wider_spec(spec1)
+
+   # if need to make figure
+   if (figure){
+     #sort by ancestry (q) so bars make sense
+     k_out_wide_sort <-  k_out_wide[order(k_out_wide[unique(k_out$Anc)[-length(unique(k_out$Anc))]],
+                                         decreasing=TRUE),]
+     k_out_long <- as.data.frame(k_out)
+     k_out_long[[pop_id_indv]] <-  factor(k_out_long[[pop_id_indv]],
+                                        levels=k_out_wide_sort[[pop_id_indv]])
+
+     #group and sort_by
+     if (!(is.null(group)) & !(is.null(sort_by))){ #both
+        #print('both contain something')
+        group_order <- as.character(unique(k_out_long[[group]][order(k_out_long[[sort_by]])]))
+        k_out_long[[group]] <- factor(k_out_long[[group]],levels = group_order)
+     }else if(!(is.null(sort_by))){ #sort_by only
+       #print('sort_by contains something')
+       k_out_long <- k_out_long[order(-1*k_out_long[[sort_by]]),]
+       k_out_long[[pop_id_indv]] <-  factor(k_out_long[[pop_id_indv]],
+                                        levels=k_out_wide_sort[[pop_id_indv]])
+     }else if(!(is.null(group))){# group only
+       #print('group contains something')
+     }else{#neither
+       
+     }
+     #run figure function 
+     ent_fig <- entropy_fig(k_out_long,pop_id_indv,group,colors)
+   }else{
+     ent_fig=NULL
+   }
+   
+   return(list(ent_out = k_out_wide,ent_fig=ent_fig))
+}
+
+######################################## entropy_figure function ########################################
+
+entropy_fig <- function(k_out_long,pop_id_indv,group=NULL,colors=NULL){
+  
+  # specify colors
+  if (is.null(colors)){
+    col <- color_choose(length(unique(k_out_long$Anc)))
+  }else{
+    col <- colors
+  }
+
+  # Make figure 
+  ent_fig <- ggplot(k_out_long, aes(x=k_out_long[[pop_id_indv]], y=q, fill=Anc)) +
+      geom_bar(stat="identity", position="fill") +
+      scale_x_discrete(expand=c(0, 0)) +
+      scale_y_continuous(expand=c(0, 0)) +
+      scale_fill_manual(values=col) +
+      guides(fill=guide_legend(override.aes=list(colour=NULL))) +
+      theme_bw()+
+      theme(panel.grid=element_blank(),
+            panel.background=element_rect(fill=NA, colour="black"),
+            panel.spacing=unit(0.15, "lines"),
+            axis.title=element_blank(),
+            axis.text.x=element_blank(),
+            axis.text = element_text(size=13),
+            axis.ticks.x=element_blank(),
+            strip.background=element_blank(),
+            #rect = element_rect(fill = "transparent"),
+            strip.text=element_text(size=13,colour="black",face='bold'),
+            legend.position = 'none',
+            legend.key=element_rect(colour="black"))
+    #print(ent_fig)
+  
+  #add group if exists
+  if(!is.null(group)){ 
+    ent_fig <- ent_fig + 
+      facet_grid(~k_out_long[[group]], switch = "x", scales = "free", space = "free")
+  }
+  return(ent_fig)
+}
+
+######################################## color_choose function ########################################
+
+color_choose <- function(num){
+  col10 <- pal_npg()(10)
+  col20 <- pal_d3(palette = 'category20')(20)
+  if (num <= 10){
+    col_out <- col10[1:num]
+  }else if (num <= 20){
+    col_out <- col20[1:num]
+  }else{
+    col_out <- hue_pal()(num)
+  }
+  return(col_out)
+}
+```
+
+## Examples  
+
+### ERNA (*Ericameria nauseosa*, rubber rabbitbrush)  
+
+#### Features:    
+- 585 individuals, 75 populations  
+- extremely broad sampling  
+- sort_by: PC1  
+- group: NULL    
+- colors: given  
+- k: only one  
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.height=3,fig.width=12}
+
+# Set variables
+q <- read.csv("data/ERNA/q2.txt", header=TRUE)
+MCMC <- read.csv('data/ERNA/MCMC_k2.txt')
+k <- 2
+pop_id <- read.csv('data/ERNA/pca_df.csv')
+indv_list <- as.character(pop_id$All)
+pop_id_indv <- 'All'
+figure <- TRUE
+sort_by <- 'PC1'
+group <- NULL
+colors <- c('grey40','seagreen')
+
+# Run function
+ERNA_k2 <- entropy_out(q,MCMC,k,indv_list,pop_id,pop_id_indv,
+                        figure,sort_by,group,colors)
+
+# data frame 
+write.csv(ERNA_k2$ent_out,'data/ERNA/k2_out.csv',row.names=FALSE)
+
+# figure
+ERNA_k2_fig <-ERNA_k2$ent_fig
+ERNA_k2_fig
+
+ggsave('data/ERNA/k2_figure.pdf',height=3,width=10)
+
+```
+
+### CHDO (*Chaenactis douglasii*, dusty maiden):   
+
+#### Features:    
+- 272 individuals, 24 populations, 3 ploidy levels
+- extremely broad sampling  
+- sort_by: PC1  
+- group: population and ploidy   
+- colors: NULL  
+- k: three (k2,k3,k4) 
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.height=9,fig.width=12}
+
+# Set variables
+q2 <- read.csv("data/CHDO/q2.txt", header=TRUE)
+MCMC2 <- read.csv('data/CHDO/MCMC_k2.txt')
+q3 <- read.csv("data/CHDO/q3.txt", header=TRUE)
+MCMC3 <- read.csv('data/CHDO/MCMC_k3.txt')
+q4 <- read.csv("data/CHDO/q4.txt", header=TRUE)
+MCMC4 <- read.csv('data/CHDO/MCMC_k4.txt')
+
+pop_id <- read.csv('data/CHDO/pca_df.csv')
+indv_list <- as.character(pop_id$All)
+pop_id_indv <- 'All'
+figure <- TRUE
+sort_by <- 'PC1'
+group <- 'PopPloidy'
+colors <- NULL
+
+#### k2 ####
+# Run function
+CHDO_k2 <- entropy_out(q=q2,MCMC=MCMC2,k=2,indv_list,pop_id,pop_id_indv,
+                        figure,sort_by,group,colors)
+
+# data frame 
+write.csv(CHDO_k2$ent_out,'data/CHDO/k2_out.csv',row.names=FALSE)
+
+# figure
+CHDO_k2_fig <-CHDO_k2$ent_fig
+#CHDO_k2_fig
+
+#ggsave('data/CHDO/k2_figure.pdf',height=3,width=12)
+
+#### k3 ####
+# Run function
+CHDO_k3 <- entropy_out(q=q3,MCMC=MCMC3,k=3,indv_list,pop_id,pop_id_indv,
+                        figure,sort_by,group,colors)
+
+# data frame 
+write.csv(CHDO_k3$ent_out,'data/CHDO/k3_out.csv',row.names=FALSE)
+
+# figure
+CHDO_k3_fig <-CHDO_k3$ent_fig
+#CHDO_k3_fig
+
+#ggsave('data/CHDO/k3_figure.pdf',height=3,width=12)
+
+#### k4 ####
+# Run function
+CHDO_k4 <- entropy_out(q=q4,MCMC=MCMC4,k=4,indv_list,pop_id,pop_id_indv,
+                        figure,sort_by,group,colors)
+
+# data frame 
+write.csv(CHDO_k4$ent_out,'data/CHDO/k4_out.csv',row.names=FALSE)
+
+# figure
+CHDO_k4_fig <-CHDO_k4$ent_fig
+#CHDO_k4_fig
+
+#ggsave('data/CHDO/k4_figure.pdf',height=3,width=14)
+
+#### Put all figures together
+
+CHDO_k2_fig / CHDO_k3_fig / CHDO_k4_fig
+
+ggsave('data/CHDO/k2-4_figure.pdf',height=9,width=12)
+
+```
+
+### PIRE: sort_by, group, no colors, multiple ks 
+
+#### Features:    
+- 149 individuals, 24 populations, 3 ploidy levels  
+- extremely fine-scale sampling  
+- sort_by: Latitude  
+- group: Trail ID   
+- colors: NULL
+- k: very high (k10,k11) 
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.height=6,fig.width=12}
+
+# Set variables
+q10 <- read.csv("data/PIRE/q10.txt", header=TRUE)
+MCMC10 <- read.csv('data/PIRE/MCMC_k10.txt')
+q11 <- read.csv("data/PIRE/q11.txt", header=TRUE)
+MCMC11 <- read.csv('data/PIRE/MCMC_k11.txt')
+
+pop_id <- read.csv('data/PIRE/pca_df.csv')
+indv_list <- as.character(pop_id$All)
+pop_id_indv <- 'All'
+figure <- TRUE
+sort_by <- 'Lat'
+group <- 'Trail'
+colors <- NULL
+
+#### k10 ####
+# Run function
+PIRE_k10 <- entropy_out(q=q10,MCMC=MCMC10,k=10,indv_list,pop_id,pop_id_indv,
+                        figure,sort_by,group,colors)
+
+# data frame 
+write.csv(PIRE_k10$ent_out,'data/PIRE/k10_out.csv',row.names=FALSE)
+
+# figure
+PIRE_k10_fig <-PIRE_k10$ent_fig
+#PIRE_k10_fig
+
+#ggsave('data/PIRE/k10_figure.pdf',height=3,width=12)
+
+#### k11 ####
+# Run function
+PIRE_k11 <- entropy_out(q=q11,MCMC=MCMC11,k=11,indv_list,pop_id,pop_id_indv,
+                        figure,sort_by,group,colors)
+
+# data frame 
+write.csv(PIRE_k11$ent_out,'data/PIRE/k11_out.csv',row.names=FALSE)
+
+# figure
+PIRE_k11_fig <-PIRE_k11$ent_fig
+#PIRE_k11_fig
+
+#ggsave('data/PIRE/k11_figure.pdf',height=11,width=12)
+
+#### Put all figures together
+
+PIRE_k10_fig / PIRE_k11_fig
+
+ggsave('data/PIRE/k10-11_figure.pdf',height=6,width=12)
+
+```
