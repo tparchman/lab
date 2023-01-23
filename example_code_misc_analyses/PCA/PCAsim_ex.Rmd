@@ -1,0 +1,534 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r, echo=FALSE}
+library(knitr)
+#opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+---
+title: "PCA: genetic simulation and wonkiness "
+author: "Trevor Faske"
+output: pdf_document
+---
+
+This Rmarkdown is a simulates genetic data and highlights different issues with how PCA (or most clustering methods) partitions variance and clusters data. Following many examples from dumb paper: Elhaik et al. 2022 *Scientific Reports*: [<https://doi.org/10.1038/s41598-022-14395-4>]
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '~/Desktop/projects/mixed_ploidy/')
+```
+
+### Loading packages
+
+```{r eval=TRUE, eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE}
+library(tidyverse)
+library(ggsci)
+library('wesanderson')
+library(scales)
+library(patchwork)
+library(ggpubr)
+```
+
+## Simulate data function
+
+creates ancestral allele frequencies from rbeta() then creates new populations and samples individual genotypes using rbinom() assuming all diploid.
+
+#### features:
+
+-   **nloci:** number of loci\
+-   **nind:** number of individuals total\
+-   **npop:** number of populations\
+-   **theta1:** shape1 of beta distribution (could be thought of as theta diversity)\
+-   **theta2:** shape2 of beta distribution (could be thought of as theta diversity)
+    -   note: use hist(rbeta(1000,theta1,theta2)) to view allele frequency distribution\
+-   **Fst:** population differentiation based on a Wright-Fisher model\
+-   **MAF:** Minor allele frequeuncy cutoff\
+-   **sampleSize:** sample size proportions options for populations
+    -   'equal' = equal population sizes (ind per pop = nind/npop)\
+    -   'unequal' = sample sizes vary among individuals within a population sample sizes vary (see popProb for sampling)\
+-   **popProb:** sample probabilities of each population (length must be equal to npop and sum to 1). If NULL, popProb will be equal to 1/npop for each population. (ex. npop = 5, popProb = c(.2,.2,.2,.2,.2))\
+-   **maxMissing:** max amount of mising data per individual (sampled using a scaled rpois())\
+-   **seed:** seed to be set for random sampling
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=5,fig.height=6}
+
+
+sim_mixedploidy <- function(nloci=5000,nind=300,npop=10,theta1=0.8,theta2=0.8,
+                            Fst=.1,MAF=0.05,sampleSize='equal',
+                            popProb=NULL,maxMissing=NULL,seed=666){
+
+  set.seed(seed)
+
+  # ancestral population
+  anc.pi<-rbeta(nloci, theta1, theta2)
+
+  # generate population allele freqs, double nloci to remove MAF and invariants later
+  sim.pop <- matrix(nrow=nloci*2, ncol=npop)
+  for(j in 1:npop){
+    Fm <- (1-Fst)/Fst #equal to the F-model. Nicholson et al 2002
+    sim.pop[,j] <- rbeta(nloci*2, anc.pi * Fm,
+                         (1-anc.pi) * Fm)
+  }
+
+  ### sample populations and ploidy
+  if (sampleSize == 'equal'){
+    
+    #create pop_list
+    popProb <- rep(1/npop,times=npop)
+    pop_list <- rep(1:npop,each=nind/npop)
+    
+    #incase ind%%npop != 0
+    if (nind%%npop != 0){
+      pop_list <- c(pop_list,sample(1:npop,nind%%npop,replace = FALSE))
+    }
+  
+    
+  }else if (sampleSize == 'unequal'){
+    
+    #create popProb if not provided
+    if (is.null(popProb)){
+      popProb <- rep(1/npop,times=npop)
+    }
+    
+    #create pop_list 
+    pop_list <- sort(sample(1:npop,nind,replace=TRUE,prob=popProb))
+    pops <- unique(pop_list)
+    
+  }else{stop('not correct sampling scheme option')}
+  
+
+  # generate individual genotypes assuming diploid (sample 2)
+  sim.geno <- array(0, dim=c(nloci*2, nind)) 
+  for (i in (1:nind)){
+    sim.geno[,i] <- rbinom(nloci*2, 2, prob=sim.pop[,pop_list[i]])
+  }
+  
+  #filter on minor allele freq (MAF)
+  maf_loci <- apply(sim.geno,1,function(g) (1-(length(which(g==0))/length(g))))
+  sim.geno <- sim.geno[-which(maf_loci < MAF),]
+  
+  #remove invariants
+  invar_sites <- which(apply(sim.geno,1,function(g) sd(g,na.rm = TRUE)) == 0)
+  sim.geno <- sim.geno[-unique(invar_sites),]
+  #print(cat((1-(nrow(sim.geno)/(nloci*2)))*100,
+            #'% of sites were invariant and removed.\n....A total of ',
+            #nrow(sim.geno),' sites were kept for analysis'))
+  
+  #remove excess loci to make equal to nloci 
+  sim.geno <- sim.geno[sample(1:nrow(sim.geno),nloci),]
+  
+  #create max missing data 
+  if(!is.null(maxMissing)){
+    missPerc <- rbeta(nind,2,5)*maxMissing
+    for (i in 1:nind){
+      na_index <- sample(1:nloci,nloci*missPerc[i])
+      sim.geno[na_index,i] <- NA
+    }
+  }
+  
+  sim_out <- list('geno'=sim.geno,'pop_list'=pop_list,
+                  'nloci'=nloci,'nind'=nind,'npop'=npop)
+  return(sim_out)
+}
+```
+
+### PCA function
+
+Makes a PCA with different standardizations.
+
+#### Method options
+
+-   **none:** no center or no standardization\
+-   **center:** centering only, no standardization
+-   **stand:** center and standardizing\
+-   **stand_af:** standardization by rate proportional to expectation of genetic drift (demoninator = sqrt(af\*(1-af))) (Patterson et al. 2006)
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=5,fig.height=5}
+
+## choose colors for PCA 
+color_choose <- function(num){
+  col10 <- pal_npg()(10)
+  col20 <- pal_d3(palette = 'category20')(20)
+  if (num <= 10){
+    col_out <- col10[1:num]
+  }else if (num <= 20){
+    col_out <- col20[1:num]
+  }else{
+    col_out <- hue_pal()(num)
+  }
+  return(col_out)
+}
+
+## PCA_figure (makes a figure on PC1 v PC2) 
+PCA_fig <- function(pca_df,pve,title){
+  col <- color_choose(length(unique(pca_df$Pop)))
+  xlab <- paste("PCA1 (",round(pve[1]*100,2),"%)",sep="")
+  ylab <- paste("PCA2 (",round(pve[2]*100,2),"%)",sep="")
+  pca_plot <- ggplot(data = pca_df, aes(x=PC1,y=PC2,fill=Pop)) + 
+    geom_point(colour='black',pch=21,size = 4) +
+    scale_fill_manual(name='Population:',values=col) + 
+    xlab(xlab) + ylab(ylab) +
+    ggtitle(title) + 
+    theme_bw() + 
+    theme(#legend.position = 'none',
+      axis.text = element_text(size=13), 
+      axis.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      plot.title = element_text(size = 16, colour="black",face = "bold"),
+      panel.border = element_rect(size = 1.5, colour = "black"),
+      legend.text = element_text(size=13),
+      legend.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank())
+  #print(pca_plot)
+  return(pca_plot)
+}
+
+PCA_ploidy <- function(sim_out,method='none'){
+  
+  ## initialize variables
+  geno <- sim_out$geno
+  pop_list <- sim_out$pop_list
+  nind <- sim_out$nind
+  npop <- sim_out$npop
+  
+  ## run method and PCA
+  if(method == 'none'){
+    g_t <- t(geno)
+                 
+    #fix invariant sites (should not be any)
+    g_t[is.na(g_t)] <- 0 
+    
+    pca_out <- prcomp(g_t,scale. = FALSE,center=FALSE)
+    pve <- summary(pca_out)$importance[2,1:5]
+    pca_df <- data.frame(Pop=as.character(pop_list),
+                         pca_out$x[,1:5])
+    title <- 'No center or standardizing'
+    
+  }else if(method == 'center'){
+    g_t <- t(geno)
+    
+    #center
+    g_c <- apply(g_t,2,function(d) (d-mean(d)))
+                 
+    #fix invariant sites (should not be any)
+    g_c[is.na(g_c)] <- 0 
+    
+    pca_out <- prcomp(g_c,scale. = FALSE,center=FALSE)
+    pve <- summary(pca_out)$importance[2,1:5]
+    pca_df <- data.frame(Pop=as.character(pop_list),
+                         pca_out$x[,1:5])
+    title <- 'Centering only'
+    
+  }else if(method == 'stand'){
+    g_t <- t(geno)
+    
+    #center and standardize
+    g_z <- apply(g_t,2,function(d) (d-mean(d))/sd(d))
+    
+    #fix invariant sites (should not be any)
+    g_z[is.na(g_z)] <- 0 
+    g_z[is.infinite(g_z)] <- 0 
+    
+    pca_out <- prcomp(g_z,scale. = FALSE,center=FALSE)
+    pve <- summary(pca_out)$importance[2,1:5]
+    pca_df <- data.frame(Pop=as.character(pop_list),
+                         pca_out$x[,1:5])
+    title <- 'Centered and standardized'
+    
+  }else if(method == 'stand_af'){
+    g_t <- t(geno)
+    
+    #center and standardize by drift
+    colmean<-apply(g_t,2,mean,na.rm=TRUE)
+    normalize<-matrix(nrow = nrow(g_t),ncol=ncol(g_t))
+    af<-colmean/2
+    for (m in 1:length(af)){
+      nr<-g_t[ ,m]-colmean[m]
+      dn<-sqrt(af[m]*(1-af[m]))
+      normalize[ ,m]<-nr/dn
+    }
+    #fix invariant sites (should not be any)
+    normalize[is.na(normalize)]<-0
+    normalize[is.infinite(normalize)] <- 0 
+
+    pca_out <- prcomp(normalize,scale. = FALSE,center=FALSE)
+    pve <- summary(pca_out)$importance[2,1:5]
+    
+    pca_df <- data.frame(Pop=as.character(pop_list),
+                         pca_out$x[,1:5])
+    title <- 'Standardization by drift'
+    
+  }else{
+    stop('method not correct')
+  }
+  pca_plot <- PCA_fig(pca_df,pve,title)
+  pca_out <- list("pca_plot"=pca_plot,"pca_df"=pca_df,'pve'=pve)
+  return(pca_out)
+}
+
+```
+
+### 2 pops, little divergence (Fst = 0.05)
+
+**NOTE:** PVE of the first axis is roughly equal to Fst in a two population model
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=15,fig.height=5}
+sim_pop2_fst5 <- sim_mixedploidy(nloci = 5000,nind = 300,npop = 2,
+                                 Fst=0.05,sampleSize = 'equal')
+```
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=11,fig.height=12}
+pca_none2_fst5 <- PCA_ploidy(sim_pop2_fst5,method='none')
+pca_center2_fst5 <- PCA_ploidy(sim_pop2_fst5,method='center')
+pca_stand2_fst5 <- PCA_ploidy(sim_pop2_fst5,method='stand')
+pca_stand_af2_fst5 <- PCA_ploidy(sim_pop2_fst5,method='stand_af')
+
+ggarrange(pca_none2_fst5$pca_plot,pca_center2_fst5$pca_plot,
+          pca_stand2_fst5$pca_plot,pca_stand_af2_fst5$pca_plot,
+          nrow=3,ncol=2,common.legend = TRUE,align='hv')
+
+```
+
+### 2 pops, high divergence (Fst = 0.2)
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=15,fig.height=5}
+sim_pop2_fst2 <- sim_mixedploidy(nloci = 5000,nind = 300,npop = 2,
+                                 Fst=0.2,sampleSize = 'equal')
+```
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=11,fig.height=12}
+pca_none2_fst2 <- PCA_ploidy(sim_pop2_fst2,method='none')
+pca_center2_fst2 <- PCA_ploidy(sim_pop2_fst2,method='center')
+pca_stand2_fst2 <- PCA_ploidy(sim_pop2_fst2,method='stand')
+pca_stand_af2_fst2 <- PCA_ploidy(sim_pop2_fst2,method='stand_af')
+
+ggarrange(pca_none2_fst2$pca_plot,pca_center2_fst2$pca_plot,
+          pca_stand2_fst2$pca_plot,pca_stand_af2_fst2$pca_plot,
+          nrow=2,ncol=2,common.legend = TRUE,align='hv')
+
+```
+
+### 8 pops, little divergence (Fst = 0.05)
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=15,fig.height=5}
+sim_pop8_fst5 <- sim_mixedploidy(nloci = 5000,nind = 300,npop = 8,
+                                 Fst=0.05,sampleSize = 'equal')
+```
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=11,fig.height=12}
+pca_none8_fst5 <- PCA_ploidy(sim_pop8_fst5,method='none')
+pca_center8_fst5 <- PCA_ploidy(sim_pop8_fst5,method='center')
+pca_stand8_fst5 <- PCA_ploidy(sim_pop8_fst5,method='stand')
+pca_stand_af8_fst5 <- PCA_ploidy(sim_pop8_fst5,method='stand_af')
+
+ggarrange(pca_none8_fst5$pca_plot,pca_center8_fst5$pca_plot,
+          pca_stand8_fst5$pca_plot,pca_stand_af8_fst5$pca_plot,
+          nrow=2,ncol=2,common.legend = TRUE,align='hv')
+
+```
+
+### 8 pops, high divergence (Fst = 0.2)
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=15,fig.height=5}
+sim_pop8_fst2 <- sim_mixedploidy(nloci = 5000,nind = 300,npop = 8,
+                                 Fst=0.2,sampleSize = 'equal')
+```
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=11,fig.height=12}
+pca_none8_fst2 <- PCA_ploidy(sim_pop8_fst2,method='none')
+pca_center8_fst2 <- PCA_ploidy(sim_pop8_fst2,method='center')
+pca_stand8_fst2 <- PCA_ploidy(sim_pop8_fst2,method='stand')
+pca_stand_af8_fst2 <- PCA_ploidy(sim_pop8_fst2,method='stand_af')
+
+ggarrange(pca_none8_fst2$pca_plot,pca_center8_fst2$pca_plot,
+          pca_stand8_fst2$pca_plot,pca_stand_af8_fst2$pca_plot,
+          nrow=2,ncol=2,common.legend = TRUE,align='hv')
+
+```
+
+## Issues of unequal sample size
+
+#### 5 pop, medium divergence (Fst = 0.1), unequal sample sizes.
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=15,fig.height=5}
+sim_pop5_equal <- sim_mixedploidy(nloci = 5000,nind = 100,npop = 5,
+                                 Fst=0.1,sampleSize = 'equal')
+sim_pop5_unequal <- sim_mixedploidy(nloci = 5000,nind = 100,npop = 5,
+                                 Fst=0.1,sampleSize = 'unequal')
+sim_pop5_oneLarge <- sim_mixedploidy(nloci = 5000,nind = 100,npop = 5,
+                                 Fst=0.1,sampleSize = 'unequal',popProb = c(.6,.1,.1,.1,.1))
+sim_pop5_twoLarge <- sim_mixedploidy(nloci = 5000,nind = 100,npop = 5,
+                                 Fst=0.1,sampleSize = 'unequal',popProb = c(.3,.3,.1,.1,.1))
+```
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=11,fig.height=12}
+pca_equal5 <- PCA_ploidy(sim_pop5_equal,method='stand_af')
+pca_equal5_plot <- PCA_fig(pca_equal5$pca_df,pca_equal5$pve,'Equal sample size')
+pca_unequal5 <- PCA_ploidy(sim_pop5_unequal,method='stand_af')
+pca_unequal5_plot <- PCA_fig(pca_unequal5$pca_df,pca_unequal5$pve,'Unequal sample size')
+pca_oneLarge5 <- PCA_ploidy(sim_pop5_oneLarge,method='stand_af')
+pca_oneLarge5_plot <- PCA_fig(pca_oneLarge5$pca_df,pca_oneLarge5$pve,'One large population')
+pca_twoLarge5 <- PCA_ploidy(sim_pop5_twoLarge,method='stand_af')
+pca_twoLarge5_plot <- PCA_fig(pca_twoLarge5$pca_df,pca_twoLarge5$pve,'Two large populations')
+
+ggarrange(pca_equal5_plot,pca_unequal5_plot,
+          pca_oneLarge5_plot,pca_twoLarge5_plot,
+          nrow=2,ncol=2,common.legend = TRUE,align='hv')
+
+```
+
+## Issues of missing data
+
+#### 5 pop, medium divergence (Fst = 0.1), missing data varies
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=15,fig.height=5}
+sim_miss0 <- sim_mixedploidy(nloci = 5000,nind = 100,npop = 5,
+                                 Fst=0.1,sampleSize = 'equal',maxMissing = NULL)
+sim_miss20 <- sim_mixedploidy(nloci = 5000,nind = 100,npop = 5,
+                                 Fst=0.1,sampleSize = 'equal',maxMissing = .2)
+sim_miss50 <- sim_mixedploidy(nloci = 5000,nind = 100,npop = 5,
+                                 Fst=0.1,sampleSize = 'equal',maxMissing = .5)
+sim_miss80 <- sim_mixedploidy(nloci = 5000,nind = 100,npop = 5,
+                                 Fst=0.1,sampleSize = 'equal',maxMissing = .8)
+```
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=11,fig.height=12}
+### make missing PCA function
+PCA_miss <- function(sim_out,title){
+  
+  ## initialize variables
+  geno <- sim_out$geno
+  pop_list <- sim_out$pop_list
+  nind <- sim_out$nind
+  npop <- sim_out$npop
+  g_t <- t(geno)
+  
+  ## calculate missing data
+  miss <- apply(g_t,1,function(g) length(which(is.na(g)))/ncol(g_t))
+
+  #center and standardize by drift
+  colmean<-apply(g_t,2,mean,na.rm=TRUE)
+  normalize<-matrix(nrow = nrow(g_t),ncol=ncol(g_t))
+  af<-colmean/2
+  for (m in 1:length(af)){
+    nr<-g_t[ ,m]-colmean[m]
+    dn<-sqrt(af[m]*(1-af[m]))
+    normalize[ ,m]<-nr/dn
+  }
+  #fix invariant sites (should not be any)
+  normalize[is.na(normalize)]<-0
+  normalize[is.infinite(normalize)] <- 0 
+
+  pca_out <- prcomp(normalize,scale. = FALSE,center=FALSE)
+  pve <- summary(pca_out)$importance[2,1:5]
+    
+  pca_df <- data.frame(Pop=as.character(pop_list),
+                       miss = miss,pca_out$x[,1:5])
+  
+  col <- wes_palette("Zissou1", 1000, type = "continuous")
+  xlab <- paste("PCA1 (",round(pve[1]*100,2),"%)",sep="")
+  ylab <- paste("PCA2 (",round(pve[2]*100,2),"%)",sep="")
+  pca_plot <- ggplot(data = pca_df, aes(x=PC1,y=PC2,fill=miss)) + 
+    geom_point(colour='black',pch=21,size = 4) +
+    scale_fill_gradientn(name='Missing\ndata:',colours=col) + 
+    xlab(xlab) + ylab(ylab) +
+    ggtitle(title) + 
+    theme_bw() + 
+    theme(#legend.position = 'none',
+      axis.text = element_text(size=13), 
+      axis.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      plot.title = element_text(size = 16, colour="black",face = "bold"),
+      panel.border = element_rect(size = 1.5, colour = "black"),
+      legend.text = element_text(size=13),
+      legend.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank())
+  #print(pca_plot)
+  return(pca_plot)
+  
+}
+
+
+
+pca_miss0_plot <- PCA_miss(sim_miss0,title='0% missing data')
+pca_miss20_plot <- PCA_miss(sim_miss20,title='20% max missing data')
+pca_miss50_plot <- PCA_miss(sim_miss50,title='50% max missing data')
+pca_miss80_plot <- PCA_miss(sim_miss80,title='80% max missing data')
+
+
+ggarrange(pca_miss0_plot,pca_miss20_plot,
+          pca_miss50_plot,pca_miss80_plot,
+          nrow=2,ncol=2,align='hv')
+
+```
+
+### Color example from Figure 1 in dumb paper
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=10,fig.height=5}
+pca_color_df <- data.frame(Color=c('red','green','blue','black'),
+                           PC1=c(0,-.71,0.71,0),
+                           PC2=c(0.82,-.41,-0.41,0),
+                           PC3=c(0.14,0.14,0.14,-0.43),
+                           OG1=c(1,0,0,0),
+                           OG2=c(0,1,0,0),
+                           OG3=c(0,0,1,0))
+pca_color_df$Color <- factor(pca_color_df$Color,
+                             levels=c('red','green','blue','black'))
+pve <- c(.44,.44,.11)
+
+col <- c('red','green','blue','black')
+pca12_color_plot <- ggplot(data = pca_color_df, aes(x=PC1,y=PC2,fill=Color)) + 
+  geom_point(colour='black',pch=21,size = 4) +
+  scale_fill_manual(name='Color:',values=col) + 
+  xlab(paste("PCA1 (",round(pve[1]*100,2),"%)",sep="")) + 
+  ylab(paste("PCA2 (",round(pve[2]*100,2),"%)",sep="")) +
+  ggtitle('Color example Fig. 1: PC1 v PC2') + 
+  theme_bw() + 
+  theme(legend.position = 'none',
+      axis.text = element_text(size=13), 
+      axis.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      plot.title = element_text(size = 16, colour="black",face = "bold"),
+      panel.border = element_rect(size = 1.5, colour = "black"),
+      legend.text = element_text(size=13),
+      legend.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank())
+#pca12_color_plot
+
+pca23_color_plot <- ggplot(data = pca_color_df, aes(x=PC2,y=PC3,fill=Color)) + 
+  geom_point(colour='black',pch=21,size = 4) +
+  scale_fill_manual(name='Color:',values=col) + 
+  xlab(paste("PCA2 (",round(pve[2]*100,2),"%)",sep="")) + 
+  ylab(paste("PCA3 (",round(pve[3]*100,2),"%)",sep="")) +
+  ggtitle('Color example Fig. 1: PC2 v PC3') + 
+  theme_bw() + 
+  theme(legend.position = 'none',
+      axis.text = element_text(size=13), 
+      axis.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      plot.title = element_text(size = 16, colour="black",face = "bold"),
+      panel.border = element_rect(size = 1.5, colour = "black"),
+      legend.text = element_text(size=13),
+      legend.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank())
+
+pca12_color_plot + pca23_color_plot
+
+
+#### Look at distances of PCA and OG matrix 
+
+dist_color <- dist(pca_color_df[,5:7])
+dist_color
+
+dist_color_pca <- dist(pca_color_df[,2:4])
+dist_color_pca
+
+cor(as.vector(dist_color),as.vector(dist_color_pca))
+
+plot(as.vector(dist_color),as.vector(dist_color_pca))
+
+```

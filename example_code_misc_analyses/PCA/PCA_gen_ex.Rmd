@@ -1,0 +1,222 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r, echo=FALSE}
+library(knitr)
+#opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+---
+title: "PCA_gen function and figure"
+author: "Trevor Faske"
+output: pdf_document
+---
+
+This Rmarkdown goes through the created PCA function that makes a PCA for genetic data. It can handle a 012, gprob, or pntest entropy file. By default, function uses standardizes by rate proportional to expectation of genetic drift following Patterson et al 2006.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '~/Desktop/src/R/Rmarkdown/PCA')
+```
+
+### Loading packages
+
+```{r eval=TRUE, eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE}
+library(data.table) #fread
+library(ggplot2)
+library(ggsci) #colors discrete
+library('wesanderson') #colors continuous 
+library(patchwork) #multipanel figues
+```
+
+## Function for PCA_gen 
+
+PCA for genetic data (012 or gprob file)  
+
+#### input files:  
+- **g:** genotypic data with individuals as rows and snps as coloumns. Can include missing data. Either genotype probabilities or 012 format  
+- **indv:**  dataframe with rows corresponding to individuals in df_gen file. Must have Pop and ID column   
+- **method:** (default = patterson)  
+  - **patterson:** standardization by rate proportional to expectation of genetic drift (denominator = sqrt(af\*(1-af)))   (Patterson et al. 2006)\  
+  - **none:** no center or no standardization\  
+  - **center:** centering only, no standardization\  
+  - **stand:** center and standardizing\  
+- **num:** number of PC axes to keep (default <= 5)  
+
+##### output files:  
+- **pca_df:** dataframe with rows as individuals and columns as PC1-num. Will have contents of indv_file if provided.  
+- **pve:** list of proportion of variance explained for each PC  
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE}
+
+############# PCA_gen function ######################
+
+PCA_gen <- function(g,indv_file=NULL,method='patterson',num=5){
+  
+  ## make g a matrix
+  g <- as.matrix(g)
+  
+  #remove any NA (only if 012) and make numeric
+  g <- apply(g, 2, function(d) gsub(-1,NA,d,fixed=TRUE))
+  g <- apply(g, 2, function(d) as.numeric(d))
+  
+  ## run method and PCA
+  if(method == 'patterson'){
+    
+    #center and standardize by drift
+    colmean<-apply(g,2,mean,na.rm=TRUE)
+    normalize<-matrix(nrow = nrow(g),ncol=ncol(g))
+    af<-colmean/2
+    for (m in 1:length(af)){
+      nr<-g[ ,m]-colmean[m]
+      dn<-sqrt(af[m]*(1-af[m]))
+      normalize[ ,m]<-nr/dn
+    }
+    
+    #if NA, make equal to the mean (which is 0)
+    normalize[is.na(normalize)]<-0
+
+    pca_out <- prcomp(normalize,scale. = FALSE,center=FALSE)
+    pve <- summary(pca_out)$importance[2,1:5]
+    
+  }else if(method == 'none'){
+    
+    pca_out <- prcomp(g,scale. = FALSE,center=FALSE)
+    pve <- summary(pca_out)$importance[2,1:5]
+    
+  }else if(method == 'center'){
+    
+    #center
+    g_c <- apply(g,2,function(d) (d-mean(d,na.rm=TRUE)))
+    
+    pca_out <- prcomp(g_c,scale. = FALSE,center=FALSE)
+    pve <- summary(pca_out)$importance[2,1:5]
+    
+  }else if(method == 'stand'){
+    
+    #center and standardize
+    g_z <- apply(g,2,function(d) (d-mean(d,na.rm=TRUE))/sd(d,na.rm=TRUE))
+    
+    pca_out <- prcomp(g_z,scale. = FALSE,center=FALSE)
+    pve <- summary(pca_out)$importance[2,1:5]
+    
+  }else{
+    stop('method not correct')
+  }
+  
+  ## select number of PC axes to use 
+  if(nrow(g) < num){
+    num <- nrow(g)
+  }
+  pca_df <- pca_out$x[,1:num]
+  
+  ## Add indv_file if available
+  if (!(is.null(indv_file))){
+    pca_df <- cbind(pca_df,indv_file)
+  }
+  
+  return(list("pca_df"=pca_df,'pve'=pve))
+}
+
+```
+
+
+## Function for PCA_gen 
+
+PCA for genetic data (012 or gprob file)
+
+#### input files:
+- **pca_df:** data frame including PC scores and information for each individual  
+- **pve:** percent variance explained for each PC axis  
+- **axes:** two axes for x- and y-axis of the figure (default = c(1,2))  
+- **group:** data frame column to color points by (default = 'Pop')   
+- **colors:** vector of colors for points (default = NULL, defers to color_choose)  
+- **legend:** where to put legend, for options see ggplot *legend.position* (default = 'none')  
+- **legend.title:** legend title (default = NULL)  
+
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE}
+
+####################### PCA_fig function ##################################
+
+PCA_fig <- function(pca_df,pve,axes=c(1,2),group='Pop',colors=NULL,legend='none',legend.title=NULL){
+  
+  ## specify colors
+  if (is.null(colors)){
+    col <- color_choose(length(unique(pca_df[[group]])))
+  }else{
+    col <- colors
+  }
+  
+  ## PC axis labels
+  PCx <- paste0('PC',axes[1])
+  PCy <- paste0('PC',axes[2])
+  xlab <- paste0(PCx,' (',round(pve[axes[1]]*100,2),'%)')
+  ylab <- paste0(PCy,' (',round(pve[axes[2]]*100,2),'%)')
+  pca_plot <- ggplot(data = pca_df, aes(x=.data[[PCx]],
+                                        y=.data[[PCy]],
+                                        fill=.data[[group]],)) + 
+    geom_point(colour='black',pch=21,size = 4) +
+    scale_fill_manual(name=legend.title,values=col) + 
+    xlab(xlab) + ylab(ylab) +
+    theme_bw() + 
+    theme(legend.position = legend,
+      axis.text = element_text(size=13), 
+      axis.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      plot.title = element_text(size = 16, colour="black",face = "bold"),
+      panel.border = element_rect(linewidth = 1.5, colour = "black"),
+      legend.text = element_text(size=13),
+      legend.title = element_text(size = 16, colour="black",face = "bold",vjust = 1),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank())
+  #print(pca_plot)
+  return(pca_plot)
+}
+
+## choose colors for PCA 
+color_choose <- function(num){
+  col10 <- pal_npg()(10)
+  col20 <- pal_d3(palette = 'category20')(20)
+  if (num <= 10){
+    col_out <- col10[1:num]
+  }else if (num <= 20){
+    col_out <- col20[1:num]
+  }else{
+    col_out <- hue_pal()(num)
+  }
+  return(col_out)
+}
+
+```
+
+### Run PCA 
+
+using rabbitbrush (Faske et al., 2021 Evol. App.) as example. note: fread is FAST. 
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE}
+df012<-fread("good_snps.recode.vcf.012",sep="\t", data.table=F) 
+df012 <- df012[,-1]
+
+Pop_ID <- read.csv('Pop_ID.csv')
+
+pca_out <- PCA_gen(df012,Pop_ID)
+pve <- pca_out$pve[1:5]
+
+pca_df <- pca_out$pca_df[,1:5]
+pca_df <- cbind(Pop_ID,pca_df)
+```
+
+### Plot PCA 
+
+```{r eval=TRUE, echo=TRUE,warning=FALSE,error=FALSE,message=FALSE,fig.width=10,fig.height=5}
+
+
+pca12_plot <- PCA_fig(pca_df,pve)
+pca34_plot <- PCA_fig(pca_df,pve,axes=c(3,4),legend = 'right',legend.title = 'Pop:')
+
+pca12_plot + pca34_plot
+```
