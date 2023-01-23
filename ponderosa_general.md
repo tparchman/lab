@@ -96,6 +96,25 @@ Killing all jobs by user (only for those with sudo)
     
     $ sudo pkill -u faske
 
+## Setting up global protect VPN for off campus ssh access
+
+This is a new requirement as of December of 2022. Before ssh connection to ponderosa, VPN through global protect needs to be activated.
+
+### Globalprotect VPN client needs to installed
+
+download for mac or win at https://border.unr.edu/global-protect/getsoftwarepage.esp
+
+### Using Globalprotect
+
+Go to connect portal:
+
+    vpn.unr.edu
+
+Enter Netid, then password. Multifactor authentication (MFA) will then occur via text or email. Once you are connected, you can leave it on, and `ssh` at will.
+
+
+
+
 ## Setting up ssh so that you dont have to use a password
 
 When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you are prompted for a password. Because you are doing this many times a day, this is annoying. It is also not necessary. By carefully creating, `id_rsa` and `id_rsa.pub` in `.ssh`, and then appending your `id_rsa.pub` key to the `authorized_keys` file in `.ssh` on the remote server, you set up these keys so that the server recognizes login attempts from your local computer. id_rsa contains an id that identifies your machine. `id_rsa.pub` contains the public id to be recognized for remote servers.
