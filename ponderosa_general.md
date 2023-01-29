@@ -98,20 +98,31 @@ Killing all jobs by user (only for those with sudo)
 
 ## Setting up global protect VPN for off campus ssh access
 
-This is a new requirement as of December of 2022. Before ssh connection to ponderosa, VPN through global protect needs to be activated.
+This is a new requirement as of December of 2022. Before ssh connection to ponderosa, VPN through global protect needs to be activated. All ssh connections from off campus need to occur **after** VPN connection is established.
+
+**VPN connection prior to ssh is only necessary if you are connecting from offcampus.** If you are on campus, no need to worry about this.
 
 ### Globalprotect VPN client needs to installed
 
 download for mac or win at https://border.unr.edu/global-protect/getsoftwarepage.esp
 
+### Access to global connect must be requested from OIT
+
+The below link will take you where you need to go.
+
+https://unr.teamdynamix.com/TDClient/2684/Portal/KB/ArticleDet?ID=117539
+ 
+The link to requesting VPN access is the line that says “granted access to the VPN”. All that is required for access permission is a UNR netID.
+
 ### Using Globalprotect
 
-Go to connect portal:
+Go to connect portal, and type in the below address:
 
     vpn.unr.edu
 
-Enter Netid, then password. Multifactor authentication (MFA) will then occur via text or email. Once you are connected, you can leave it on, and `ssh` at will.
+Enter Netid, then password. Multifactor authentication (MFA) will then occur via text or email. Once you are connected, you can leave it on, and `ssh` at will. 
 
+You only should only need to enter your netID and password once, which makes using this app exceptionally easy. You can leave connected, or just reconnect before using ssh. This should not have any consequences for connection speed or internet usage.
 
 
 
