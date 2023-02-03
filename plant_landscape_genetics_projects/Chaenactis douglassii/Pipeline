@@ -1,10 +1,10 @@
 
-### SNP calling 
+## SNP calling 
 
-Generating the reference with dDocent:
+### Generating the reference with dDocent:
 
 
-dDocent:
+#### dDocent:
 
 conda activate ddocent_env
 
@@ -13,7 +13,7 @@ conda activate ddocent_env
 ./ReferenceOpt.sh 4 10 4 10 SE 5 0.95 0.99 0.005
 
 2. Visualize data in kopt.data: plot values for each k1,k2 combination across similarity thresholds, pick a similarity threshold at the point of inflection on the curve 
-.
+
 ****
 library(ggplot2)
 data.table <- read.table("kopt.data", header = FALSE, col.names= c("k1","k2","Similarity", "Contigs"))
@@ -24,6 +24,7 @@ p <- ggplot(df, aes(x=Similarity, y=Contigs, group=K1K2)) + scale_x_continuous(b
 p
 ggsave("kvalues.pdf",p,height=8,width = 10,units = 'in')
 *****
+
 ---0.975, k 7 k 6---
 
 3. Trimming the reads 
@@ -41,8 +42,7 @@ ggsave("kvalues.pdf",p,height=8,width = 10,units = 'in')
 ./RefMapOpt.sh 6 7 6 7 0.975 SE 20 
 
 
-Calling SNPs with bcftools:
-
+#### Calling SNPs with bcftools:
 
 ./bwa_sort.sh
 
@@ -73,20 +73,18 @@ done
 *****
 
 
-Filtering:
+#### Filtering:
 
-
-#### 
 
 1. Keep only Biallelic:
 
 vcftools --remove-indels --min-alleles 2 --max-alleles 2 --remove-filtered-all  --recode --recode-INFO-all --gzvcf chdo.vcf.gz --out chdo_biallelic
 
-#### After filtering, kept 276 out of 276 Individuals
-#### Outputting VCF file...
-#### After filtering, kept 665153 out of a possible 3082476 Sites
+ After filtering, kept 276 out of 276 Individuals
+ Outputting VCF file...
+ After filtering, kept 665153 out of a possible 3082476 Sites
 
-***
+
 2. Remove by MAF, missing, and Thin:
 
 vcftools --max-missing 0.6 --maf 0.02 --thin 100 --remove-filtered-all --recode --recode-INFO-all --gzvcf chdo_biallelic.recode.vcf --out chdo_miss60_thin100_maf2
