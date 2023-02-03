@@ -307,7 +307,7 @@ vcftools --gzvcf chdo_ULTIMO.vcf --counts --out count
 ```
 
 
-##### Genotype likelihood estimation
+### Genotype likelihood estimation
 
 Updog and EBG:
 
@@ -442,7 +442,7 @@ ebg diseq -n 274 -l 22037 -t tot_ad_4.txt -a alt_ad_4.txt -e seqerror4.txt -p 4
 ebg diseq -n 274 -l 22037 -t tot_ad_6.txt -a alt_ad_6.txt -e seqerror6.txt -p 6
 ```
 
-##### entropy: 1) all the populations as diploids:
+### entropy: 1) all the populations as diploids:
 
 
 ```{r eval=FALSE}
@@ -580,7 +580,7 @@ estpost.entropy chdo_k7.hdf5 -s 3 -p deviance > DIC_k7.txt*
 ```
 
 
-##### entropy: 2) with diploid likelihood from bcftools and hexa/tetraploid from ebg
+### entropy: 2) with diploid likelihood from bcftools and hexa/tetraploid from ebg
 
 
 ```{r eval=FALSE}
