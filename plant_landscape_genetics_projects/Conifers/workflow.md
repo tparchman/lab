@@ -1,4 +1,4 @@
-  Giant sequioa and Incense cedar
+## Giant sequioa and Incense cedar
 
 ##### Raw data is stored on ponderosa at: 
 
