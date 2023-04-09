@@ -161,11 +161,11 @@ When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you
 
 ## For sudo only: setting up user accounts
 
-### Example user add, for Seth Romero
+### Example user add, for Ellen Martinson
 
 Use `sudo` to activate account, set working directory
 
-    $ sudo useradd -m -s /bin/bash -c "Seth Romero, Parchman Group" -G users,working romero
+    $ sudo useradd -m -s /bin/bash -c "Ellen Martinson, Parchman Group" -G users,working emartinson
 
 this adds a new user, romero:
 
@@ -176,17 +176,17 @@ this adds a new user, romero:
 
 Set passwd:
  
-    $ sudo passwd romero
+    $ sudo passwd emartinson
  
 Set her passwd to G00gle_it (temporary)
 
 Age passwork so user will have to change the first time they login
 
-    $ sudo chage -m 10 romero
+    $ sudo chage -m 10 emartinson
 
 Then to login: 
 
-    $ ssh romero@ponderosa.biology.unr.edu
+    $ ssh emartinson@ponderosa.biology.unr.edu
     password: G00gle_it (temporary; those are zeros not ones.)
     change during first login using:
 
