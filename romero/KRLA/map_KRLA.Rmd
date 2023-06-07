@@ -29,6 +29,7 @@ library(data.table)
 library(patchwork)
 library(RColorBrewer)
 library(tidyr)
+library(MetBrewer)
 setwd("~/Documents/GitHub/lab/romero/KRLA/")
 ```
 
@@ -67,14 +68,26 @@ zoom=8, maptype = 'terrain-background')
 ```{r eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 
 ##adding function to adjust palette size as points are added
+
+some <- met.brewer("Signac", n = 14)
+
+length(KRLAcoord$Pop)
+vec <- vector(length = 26)
+vec[1:8] = met.brewer("Nizami", n=8)
+vec[9:12] = met.brewer("Kandinsky", n=4)
+vec[13:17] = met.brewer("Java", n = 5)
+vec[18:22] = met.brewer("Isfahan2", n = 5)
+vec[23:26] = met.brewer("Egypt", n = 4)
+
+vec
 colorCnt = length(KRLAcoord$Pop)
-getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+getPalette = colorRampPalette(met.brewer("Signac", n = 14))
 
 map <- ggmap(map) +
 geom_point(data = KRLAcoord, aes(x = Long, y = Lat),size=2,col="black",fill='white',pch=21) +
 geom_label_repel(data = KRLAcoord, aes(x = Long, y = Lat,label = Pop,fill=Pop),
 colour = "black", fontface = "bold") +
-scale_fill_manual(values = getPalette(colorCnt)) +
+scale_fill_manual(values = vec) +
 coord_map(xlim=c(-120.8,-114.2),ylim=c(33.9,42.1)) +
 xlab("Longitude") + ylab("Latitude") + theme_bw() +
 theme(legend.position = 'none',
