@@ -165,29 +165,30 @@ When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you
 
 Use `sudo` to activate account, set working directory
 
-    $ sudo useradd -m -s /bin/bash -c "Austin Baldridge, Parchman Group" -G users,working abaldridge
+    $ sudo useradd -m -s /bin/bash -c "Ellen McMullen, Parchman Group" -G users,working emcmullen
 
-this adds a new user, abaldridge:
+this adds a new user, emcmullen:
 
 - `m` creates home directory and copies files from /etc/skel
 - `s` /bin/bash: makes bash the default shell
-- `c` "Austin Baldridge, Parchman Group" adds comment to /etc/passwd file
+- `c` "Ellen Mcmullen, Parchman Group" adds comment to /etc/passwd file
 - `G` users, working adds user to secondary group working.
 
 Set passwd:
  
-    $ sudo passwd abaldridge
+    $ sudo passwd emcmullen
  
 Set her passwd to G00gle_it (temporary)
 
 Age passwork so user will have to change the first time they login
 
-    $ sudo chage -m 10 abaldridge
+    $ sudo chage -m 10 emcmullen
 
 Then to login: 
 
-    $ ssh abaldridge@ponderosa.biology.unr.edu
+    $ ssh emcmullen@ponderosa.biology.unr.edu
     password: G00gle_it (temporary; those are zeros not ones.)
+    
     change during first login using:
 
     $ passwd newpassword
