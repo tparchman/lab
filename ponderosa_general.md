@@ -161,13 +161,13 @@ When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you
 
 ## For sudo only: setting up user accounts
 
-### Example user add, for Austin Baldridge
+### Example user add, for Andi Kautt
 
 Use `sudo` to activate account, set working directory
 
-    $ sudo useradd -m -s /bin/bash -c "Ellen McMullen, Parchman Group" -G users,working emcmullen
+    $ sudo useradd -m -s /bin/bash -c "Andi Kautt, Parchman Group" -G users,working akautt
 
-this adds a new user, emcmullen:
+this adds a new user, akaut:
 
 - `m` creates home directory and copies files from /etc/skel
 - `s` /bin/bash: makes bash the default shell
@@ -176,17 +176,17 @@ this adds a new user, emcmullen:
 
 Set passwd:
  
-    $ sudo passwd emcmullen
+    $ sudo passwd akautt
  
 Set her passwd to G00gle_it (temporary)
 
 Age passwork so user will have to change the first time they login
 
-    $ sudo chage -m 10 emcmullen
+    $ sudo chage -m 10 akautt
 
 Then to login: 
 
-    $ ssh emcmullen@ponderosa.biology.unr.edu
+    $ ssh akautt@ponderosa.biology.unr.edu
     password: G00gle_it (temporary; those are zeros not ones.)
     
     change during first login using:
