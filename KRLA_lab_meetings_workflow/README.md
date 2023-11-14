@@ -1,6 +1,5 @@
 # KRLA
 
-## placeholder
 # Organization and Workflow for *Krascheninnikovia lanata* GBS 
 Organizational notes and code for two sequencing sets:
 - rangewide sampling for landscape genomic analyses
