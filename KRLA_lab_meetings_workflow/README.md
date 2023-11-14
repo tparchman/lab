@@ -1,8 +1,5 @@
-# KRLA
-
 # Organization and Workflow for *Krascheninnikovia lanata* GBS 
-Organizational notes and code for two sequencing sets:
-- rangewide sampling for landscape genomic analyses
+Organizational notes and code for =rangewide sampling for landscape genomic analyses
 
 # Range-wide landscape genomics: sample organization and GBS workflow 
 
@@ -11,13 +8,7 @@ Organizational notes and code for two sequencing sets:
 
 - **NOTE** DNA was extracted in December 2022 at AG Biotech. Plates in lab freezer need to be tranported to -80.
 
-## GBS workflow
-
-
-
 ## Notes on library preparation
-
-**NEED TO DO**: anneal more MSE adaptors, order iproof (have martinson order a tube), order ladder
 
 ### 12/19-12/22: R/L and PCR for plates 1-6. Master mix in `KRLA_RFseq_mastermixcockatils.xlsx`.
 
@@ -30,7 +21,6 @@ We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023.
 1) cleaning contaminants using tapioca
 2) parsing barcodes
 3) splitting fastqs 
-
 4) de novo assembly
 5) reference based assembly
 6) calling variants
@@ -68,11 +58,11 @@ Raw data will stay stored in: /archive/parchman_lab/rawdata_to_backup/FRLA/
 Number of reads **after** cleaning:
 
     $ nohup grep -c "^@" KRLA.clean.fastq > FRLA1_clean_reads.txt &
-    # 
+    ## reads after cleaning:
 
-####################################################################################
+
 ## 2. Barcode parsing:
-####################################################################################
+
 
 Be sure to deactivate conda environment before running the below steps. Barcode keyfiles are `/working/parchman/KRLA/KRLA_barcode_key.csv` 
 
@@ -91,10 +81,8 @@ Parsing KRLA library:
     Number of seqs with potential MSE adapter in seq: 321195
     Seqs that were too short after removing MSE and beyond: 428
 
-
-####################################################################################
 ## 3. splitting fastqs
-####################################################################################
+
 
 For KRLA, doing this in `/working/parchman/KRLA/splitfastqs`
 
@@ -118,3 +106,9 @@ gzipped the parsed*fastq files for now, but delete once patterns and qc are veri
 # Workflow for assembly and variant calling for GBS data
 Here we will organize thoughts, details, justification, and code for all steps, from raw data to final filtered genotype matrices for population genetic analyes
 
+## Assembly
+
+- when to use reference based
+- when to not use reference based and why
+- how to run reference based assembly
+- how to run denovo assembly to generate artificial reference
