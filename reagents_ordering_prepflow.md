@@ -36,11 +36,13 @@ We mostly go through a large volume of 10 μl filtered tips.
 ### NEB
 1-800-632-5227 (Monday - Friday 9:00 AM - 8:00 PM EST) 
 
-T4 buffer B0202S 	10 X 	5 ml 	$27.00
+- T4 buffer B0202S 	10 X 	5 ml 	$27.00
 
-T4 ligase
-EcoRI
-MseI
+- EcoRI (NEB, 20,000 units/mL) R0101L
+
+- MseI (NEB, 10,000 units/mL) R0525L
+
+- T4 DNA ligase (NEB, 400,000 units/mL) M0202L
 
 500 bp ladder:  N3231S
 
