@@ -113,6 +113,11 @@ Here we will organize thoughts, details, justification, and code for all steps, 
 - how to run reference based assembly
 - how to run denovo assembly to generate artificial reference
 
+
+
+## Building a consensus reference of regions sequenced with the GBS design using `CDhit`
+
+
 ####################################################################
 ####################################################################
 BELOW IS EXAMPLE OF TWO APPROACHES OF ALIGNING TO REFERENCE GENOME:
