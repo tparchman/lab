@@ -115,7 +115,7 @@ Here we will organize thoughts, details, justification, and code for all steps, 
 
 
 
-## Building a consensus reference of regions sequenced with the GBS design using `CDhit`
+### Building a consensus reference of regions sequenced with the GBS design using `CDhit`
 
 
 ####################################################################
