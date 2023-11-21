@@ -113,13 +113,113 @@ Here we will organize thoughts, details, justification, and code for all steps, 
 - how to run reference based assembly
 - how to run denovo assembly to generate artificial reference
 
+### Reference of useful commands
+Just an unorganized list for now, will clean up later...
 
++ `parallel` - easiest way to run jobs in parallel across CPUs. See [GNU Parallel tutorial](https://www.gnu.org/software/parallel/parallel_tutorial.html)
+    + `-j` - max jobs to run in parallel
+    + `--no-notice` - eliminates excessive notices printing to shell when running jobs
+    + `:::` - followed by list of input files to process
++ `nohup <command> &> /dev/null &` - a way to run a longer background process that won't be interupted
+    + `nohup` - keeps process running even if shell or terminal is exited (i.e. long jobs don't get terminated)
+    + `&` - process is put in background (have access to shell while process is running)
+    +  `/dev/null` - essentially a black hole to direct st. output from nohup into assuming you've already captured the output of interest
+    + can do similar things with `screen` but `nohup` is simpler and enough for most of the use cases here
++ `time <command>` - prints the time a process takes after it completes
+    + will generate 3 different times, but "real" is what you're usually interested in
+    + useful for testing pararmeters of parallelization and getting idea of how long different tasks in pipeline take
++ `du -sch <files/dir/etc.> | tail -n 1` - way to see how much disk space a set of files is using, useful if a lot of temporary/intermediate files are being generated
++ `htop` - monitor status of jobs and CPU usage (just google for details)
 
 ### Building a consensus reference of regions sequenced with the GBS design using `CDhit`
 
+#### 1. gzip files (takes time)
+Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default) 
+    
+    $ nohup gzip *fastq &>/dev/null &
 
-####################################################################
-####################################################################
+#### 2. make list of individual IDs from all fastq files
+    
+    $ ls *.fastq.gz | sed -i'' -e 's/.fastq.gz//g' > namelist
+    
+#### 3. per individual, create file with unique sequences and count of occurrences 
+ First, set some variables (run as one chunk command, instant)
+
+    $ AWK1='BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}'
+    AWK2='!/>/'
+    AWK3='!/NNN/'
+    PERLT='while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}'
+    
+Second, use variables to scan through fastq files and generate *.uniq.seqs files for each individual (takes a few minutes)
+    
+    $ nohup cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$AWK2' | perl -e '$PERLT' > {}.uniq.seqs" &> /dev/null &
+    
+Combine all files into one (not required, but useful for understanding size of initial sequence pool for assembling a reference genome)
+    
+    $ cat *.uniq.seqs > uniq.seqs
+
+Get number of sequences by
+
+    $ wc -l uniq.seqs
+        ENTER KRLA NUMBER HERE
+
+### Notes here about 'optimizing' parameters in the assembly generation process...
+Seth can add a description of what the 'refOpt.sh' attempts to do (i.e. what Trevor does on pronghorn). Because that method is testing parameter effects across a subset of individuals, the inference is kind of janky. Another possibility is to explore effect of parameter variation on alternate assemblies using all individuals. Processing time (day-ish) and disk space is honestly not that big relative to this whole pipeline and pretty feasible on ponderosa (with potential to improve efficiency still). Might be worth doing in this case just to get a more in-depth understanding of things even if we decide it's not worth it on future projects...
+
+#### 4. (Required regardless of any 'optimization') select sequences according to a minimum number of occurrences within a given individual (k) and the minimum number of individuals the sequence occurs in (i)
+Simpler to do this step as a script that just pipes the steps through and avoids generating unnecessary intermediate files. Run time is roughly 2-10 minutes. Current version of this script is at *ponderosa:/working/romero/scripts/selectContigs.sh*. As currently written, run **within the directory that has .uniq.seqs** files as
+
+    $ nohup bash /working/romero/scripts/selectContigs.sh <k> <i> > k<k>.i<i>.seqs &> /dev/null &
+
+where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.
+
+For reference here and to see what steps are being done to generate this subset of sequences, selectContigs.sh is copied below:    
+
+    #!/bin/bash
+
+    parallel --no-notice -j 16 mawk -v x=$1 \''$1 >= x'\' ::: *.uniq.seqs \
+	    | cut -f2 \
+	    | perl -e 'while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}' \
+	    | mawk -v x=$2 '$1 >= x' \
+	    | cut -f2 \
+	    | mawk '{c= c + 1; print ">Contig_" c "\n" $1}' \
+	    | sed -e 's/NNNNNNNNNN/\t/g' \
+	    | cut -f1
+
+#### 5. For ponderosa, load the cd-hit module and run cd-hit-est for contig clustering.
+   
+    $ module load cd-hit/4.6
+
+Run `cd-hit-est` for chosen clustering similarity threshold. Helpful documentation for cd-hit found [here](https://github.com/weizhongli/cdhit/wiki/3.-User's-Guide#user-content-CDHITEST).
+    
+Most basic running of cd-hit looks like 
+
+    $ nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.9 &>/dev/null &
+
++ `-M ` - maximum memory allowed, default is 800M
+    + if on ponderosa, set to 0 (unlimited), not a limiting factor here, but check with `htop`
++ `-T` - maximum number of threads (effectively CPUs)
+    + 0 is all available (32 on ponderosa)
+    + if running multiple cd-hits in parallel, something like 16 might make sense? Just so the whole server isn't bogged down. Run times are still reasonable at 16
++ `-c` - clustering similarity (i.e. how similar sequences have to be to be joined into a contig)
+    + Values to try might be 0.8-0.98
+    + Note as c increases, you generate **more** contigs and the cd-hit process runs **faster**
++ `<inputFile>` is generated in previous step (something like *k4.i6.seqs*). If generating multiple assemblies for comparison, Seth uses a naming convention like *rf.4.6.90* where k=4, i=6, and c=0.9. This makes for some easy parsing of information for comparing/plotting changes in contig totals/information ratios as shown below.
+
+Note that for a given `<outputFile>` name, **2** files are generated - 1 with no file suffix (contigs only in fasta format) and 1 with .clstr suffix (with information on within contig cluster similarity).
+
+For reference, a cd-hit of c=0.9 typically takes 5-10 minutes over 32 CPUs, with lower c-values being slower, and higher being faster...
+
+*Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...*
+
+If generating multiple assemblies, we can summarize the information into a file via
+
+    $ 
+
+*Will add some code and/or images of plots for these comparisons later*
+
+---
+---
 BELOW IS EXAMPLE OF TWO APPROACHES OF ALIGNING TO REFERENCE GENOME:
 ## Alignment to *T. cristinae* genome and variant calling.
 New versions of software installed on ponderosa, with modules:
