@@ -212,9 +212,9 @@ For reference, a cd-hit of c=0.9 typically takes 5-10 minutes over 32 CPUs, with
 
 *Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...*
 
-If generating multiple assemblies, we can summarize the information into a file via
+If generating multiple assemblies, we can summarize the information into a file (here called *assemblyComparison*) via
 
-    $ 
+    $ grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
 
 *Will add some code and/or images of plots for these comparisons later*
 
