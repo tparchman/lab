@@ -1,3 +1,16 @@
+# Workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, or whatever else people want to call it)
+
+## Canned software packages or computational workflows for handling this type of data:
+
+These methods all rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. We will get into this later, but this is a major problem. Biggest cost of using these types of methods is throwing away much if not most of the data.
+
+- [stack](FIX)
+- [Ddocent](http://www.ddocent.com//)
+- [ipyrad](FIX)
+
+
+See Nielsen et al. 2011 and Buerkle and Gompert 2013 for articulate thoughts about this.
+
 # Organization and Workflow for *Krascheninnikovia lanata* GBS 
 Organizational notes and code for =rangewide sampling for landscape genomic analyses
 
@@ -106,35 +119,23 @@ gzipped the parsed*fastq files for now, but delete once patterns and qc are veri
 # Workflow for assembly and variant calling for GBS data
 Here we will organize thoughts, details, justification, and code for all steps, from raw data to final filtered genotype matrices for population genetic analyes
 
-## Assembly
+## Denovo assembly to generate a consensus reference for mapping reads prior to genotyping.
 
 - when to use reference based
 - when to not use reference based and why
 - how to run reference based assembly
 - how to run denovo assembly to generate artificial reference
 
-### Reference of useful commands
-Just an unorganized list for now, will clean up later...
+### choices for clustering/assembly methods for this type of step
+- LaCava et al. 2020 MER
 
-+ `parallel` - easiest way to run jobs in parallel across CPUs. See [GNU Parallel tutorial](https://www.gnu.org/software/parallel/parallel_tutorial.html)
-    + `-j` - max jobs to run in parallel
-    + `--no-notice` - eliminates excessive notices printing to shell when running jobs
-    + `:::` - followed by list of input files to process
-+ `nohup <command> &> /dev/null &` - a way to run a longer background process that won't be interupted
-    + `nohup` - keeps process running even if shell or terminal is exited (i.e. long jobs don't get terminated)
-    + `&` - process is put in background (have access to shell while process is running)
-    +  `/dev/null` - essentially a black hole to direct st. output from nohup into assuming you've already captured the output of interest
-    + can do similar things with `screen` but `nohup` is simpler and enough for most of the use cases here
-+ `time <command>` - prints the time a process takes after it completes
-    + will generate 3 different times, but "real" is what you're usually interested in
-    + useful for testing pararmeters of parallelization and getting idea of how long different tasks in pipeline take
-+ `du -sch <files/dir/etc.> | tail -n 1` - way to see how much disk space a set of files is using, useful if a lot of temporary/intermediate files are being generated
-+ `htop` - monitor status of jobs and CPU usage (just google for details)
 
 ### Building a consensus reference of regions sequenced with the GBS design using `CDhit`
 
+We are exactly following linux commands and pipelines from the workflow for dDocent (Puritz et al. 2014). See also link to [Ddocent](http://www.ddocent.com//)
+
 #### 1. gzip files (takes time)
-Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default) 
+Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default). This step is only necessary if fastq files are not compressed when you start. `dDocent` reads `.gz` compressed files.
     
     $ nohup gzip *fastq &>/dev/null &
 
@@ -163,7 +164,7 @@ Get number of sequences by
     $ wc -l uniq.seqs
         ENTER KRLA NUMBER HERE
 
-### Notes here about 'optimizing' parameters in the assembly generation process...
+### **Optional Step:** Notes here about 'optimizing' parameters in the assembly generation process...
 Seth can add a description of what the 'refOpt.sh' attempts to do (i.e. what Trevor does on pronghorn). Because that method is testing parameter effects across a subset of individuals, the inference is kind of janky. Another possibility is to explore effect of parameter variation on alternate assemblies using all individuals. Processing time (day-ish) and disk space is honestly not that big relative to this whole pipeline and pretty feasible on ponderosa (with potential to improve efficiency still). Might be worth doing in this case just to get a more in-depth understanding of things even if we decide it's not worth it on future projects...
 
 #### 4. (Required regardless of any 'optimization') select sequences according to a minimum number of occurrences within a given individual (k) and the minimum number of individuals the sequence occurs in (i)
@@ -172,6 +173,7 @@ Simpler to do this step as a script that just pipes the steps through and avoids
     $ nohup bash /working/romero/scripts/selectContigs.sh <k> <i> > k<k>.i<i>.seqs &> /dev/null &
 
 where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.
+
 
 For reference here and to see what steps are being done to generate this subset of sequences, selectContigs.sh is copied below:    
 
@@ -185,6 +187,10 @@ For reference here and to see what steps are being done to generate this subset 
 	    | mawk '{c= c + 1; print ">Contig_" c "\n" $1}' \
 	    | sed -e 's/NNNNNNNNNN/\t/g' \
 	    | cut -f1
+
+
+**SETH** Add a description of the files in the 'assembly' directory we talked about, how or why you would choose one for 
+
 
 #### 5. For ponderosa, load the cd-hit module and run cd-hit-est for contig clustering.
    
@@ -227,11 +233,11 @@ New versions of software installed on ponderosa, with modules:
 - bcftools 1.9 (under https://sourceforge.net/projects/samtools/files/samtools/1.9/)
 - samtools 1.10 (under https://sourceforge.net/projects/samtools/files/samtools/1.10/)
 
-## 5) Working with T. cristinae reference genome
+## 1) Working with T. cristinae reference genome
 located at:
     ponderosa:/working/parchman/tpodura/raw_ind_fastqs/
     
-## 6) reference based assembly with `bwa 0.7.17-r1188`
+## 2) reference based assembly with `bwa 0.7.17-r1188`
 
 `NOTE`: Moving forward with 598 individuals
 
@@ -246,7 +252,7 @@ Make index for `bwa`
     $ module load bwa/0.7.17-r1188
     $ perl runbwa_memTLP.pl  *fastq &
 
-## 7) Sorting, indexing, and converting `sam` files to `bam`
+## 3) Sorting, indexing, and converting `sam` files to `bam`
 
 Number of threads set in script, based on current server usage.
 
@@ -259,7 +265,7 @@ Cleaning up the directory
     $ rm *.sam
     $ rm *.sai
 
-## 8. Making pileup (bcf) and variant calling with `bcftools 1.9`
+## 4. Making pileup (bcf) and variant calling with `bcftools 1.9`
 tpod_bams is a text file with all of the **sorted** bam files listed, one per line
 
 Options used:
@@ -287,7 +293,7 @@ Options used:
     $ module load bcftools/1.9
     $ bcftools mpileup -C 50 -d 250 -f re_mod_map_timema_06Jun2016_RvNkF702.fasta -q 30 -Q 20 -I -b tpod_bams -O b -o tpod.bcf
 
-## 9. Generation vcf file from bcf.
+## 5. Generation vcf file from bcf.
 Options used:
 -v --variants-only             output variant sites only
 
@@ -312,7 +318,7 @@ Checking number of SNPs:
 After filtering, kept 598 out of 598 Individuals
 After filtering, kept 127722 out of a possible 127722 Sites
 
-## 10. Filtering
+## 5. Filtering
 
 Just doing some rough preliminary stuff here, need to consider how ZG recommends filtering based on what was done above, and how he has been doing things with Timema for mapping.
 
@@ -453,3 +459,21 @@ After filtering, kept 598 out of 598 Individuals, 18640 out of a possible 127722
 	        
 
 After filtering, kept 598 out of 598 Individuals, kept 19384 out of a possible 127722 Sites
+
+### Appendix 1: Reference of useful commands (as far as what Parchman lab people like)
+Just an unorganized list for now, will clean up later...
+
++ `parallel` - easiest way to run jobs in parallel across CPUs. See [GNU Parallel tutorial](https://www.gnu.org/software/parallel/parallel_tutorial.html)
+    + `-j` - max jobs to run in parallel
+    + `--no-notice` - eliminates excessive notices printing to shell when running jobs
+    + `:::` - followed by list of input files to process
++ `nohup <command> &> /dev/null &` - a way to run a longer background process that won't be interupted
+    + `nohup` - keeps process running even if shell or terminal is exited (i.e. long jobs don't get terminated)
+    + `&` - process is put in background (have access to shell while process is running)
+    +  `/dev/null` - essentially a black hole to direct st. output from nohup into assuming you've already captured the output of interest
+    + can do similar things with `screen` but `nohup` is simpler and enough for most of the use cases here
++ `time <command>` - prints the time a process takes after it completes
+    + will generate 3 different times, but "real" is what you're usually interested in
+    + useful for testing pararmeters of parallelization and getting idea of how long different tasks in pipeline take
++ `du -sch <files/dir/etc.> | tail -n 1` - way to see how much disk space a set of files is using, useful if a lot of temporary/intermediate files are being generated
++ `htop` - monitor status of jobs and CPU usage (just google for details)
