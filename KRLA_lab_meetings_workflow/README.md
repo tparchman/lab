@@ -119,7 +119,7 @@ gzipped the parsed*fastq files for now, but delete once patterns and qc are veri
 # Workflow for assembly and variant calling for GBS data
 Here we will organize thoughts, details, justification, and code for all steps, from raw data to final filtered genotype matrices for population genetic analyes
 
-## Denovo assembly to generate a consensus reference for mapping reads prior to genotyping.
+## I. Denovo assembly to generate a consensus reference for mapping reads prior to genotyping.
 
 - when to use reference based
 - when to not use reference based and why
@@ -142,8 +142,11 @@ Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default). T
 #### 2. make list of individual IDs from all fastq files
     
     $ ls *.fastq.gz | sed -i'' -e 's/.fastq.gz//g' > namelist
-    
-#### 3. per individual, create file with unique sequences and count of occurrences 
+
+#### 3. The substeps below serve to retain only unique sequences so that the computational scope and energy of the denovo clustering task are reduced. In otherwords, there is no reason to use 100 identical sequences, but such use would increase compute time and memory usage.
+
+#### 3a. per individual, create file with unique sequences and count of occurrences 
+
  First, set some variables (run as one chunk command, instant)
 
     $ AWK1='BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}'
@@ -151,20 +154,20 @@ Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default). T
     AWK3='!/NNN/'
     PERLT='while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}'
     
-Second, use variables to scan through fastq files and generate *.uniq.seqs files for each individual (takes a few minutes)
+#### 3b. Use variables to scan through fastq files and generate *.uniq.seqs files for each individual (takes a few minutes)
     
     $ nohup cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$AWK2' | perl -e '$PERLT' > {}.uniq.seqs" &> /dev/null &
     
-Combine all files into one (not required, but useful for understanding size of initial sequence pool for assembling a reference genome)
+#### 3c. Combine all files into one (not required, but useful for understanding size of initial sequence pool for assembling a reference genome)
     
     $ cat *.uniq.seqs > uniq.seqs
 
-Get number of sequences by
+#### 3d. Get number of sequences by
 
     $ wc -l uniq.seqs
         ENTER KRLA NUMBER HERE
 
-### **Optional Step:** Notes here about 'optimizing' parameters in the assembly generation process...
+### Notes here about 'optimizing' parameters in the assembly generation process...
 Seth can add a description of what the 'refOpt.sh' attempts to do (i.e. what Trevor does on pronghorn). Because that method is testing parameter effects across a subset of individuals, the inference is kind of janky. Another possibility is to explore effect of parameter variation on alternate assemblies using all individuals. Processing time (day-ish) and disk space is honestly not that big relative to this whole pipeline and pretty feasible on ponderosa (with potential to improve efficiency still). Might be worth doing in this case just to get a more in-depth understanding of things even if we decide it's not worth it on future projects...
 
 #### 4. (Required regardless of any 'optimization') select sequences according to a minimum number of occurrences within a given individual (k) and the minimum number of individuals the sequence occurs in (i)
@@ -189,6 +192,8 @@ For reference here and to see what steps are being done to generate this subset 
 	    | cut -f1
 
 
+The above will produce files that look like knin.seqs... explain.
+
 **SETH** Add a description of the files in the 'assembly' directory we talked about, how or why you would choose one for 
 
 
@@ -200,7 +205,7 @@ Run `cd-hit-est` for chosen clustering similarity threshold. Helpful documentati
     
 Most basic running of cd-hit looks like 
 
-    $ nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.9 &>/dev/null &
+    $ nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.92 &>/dev/null &
 
 + `-M ` - maximum memory allowed, default is 800M
     + if on ponderosa, set to 0 (unlimited), not a limiting factor here, but check with `htop`
@@ -224,6 +229,15 @@ If generating multiple assemblies, we can summarize the information into a file 
 
 *Will add some code and/or images of plots for these comparisons later*
 
+## II. Mapping reads from all individuals to reference, using `bwa`
+
+## III. Using bcftools to build cigar formatted mpileup
+
+## IV. Estimating genotype likelihoods with SAMtools
+
+## V. Filtering variants with VCFtools
+
+## VI. Entropy
 ---
 ---
 BELOW IS EXAMPLE OF TWO APPROACHES OF ALIGNING TO REFERENCE GENOME:
