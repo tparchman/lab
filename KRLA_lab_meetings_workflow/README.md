@@ -127,7 +127,7 @@ Here we will organize thoughts, details, justification, and code for all steps, 
 - how to run denovo assembly to generate artificial reference
 
 ### choices for clustering/assembly methods for this type of step
-- LaCava et al. 2020 MER
+- [LaCava et al. 2020](./papers/LaCava_etal_2020.pdf)
 
 
 ### Building a consensus reference of regions sequenced with the GBS design using `CDhit`
