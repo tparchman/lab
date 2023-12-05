@@ -9,7 +9,7 @@ These methods all rely on set thresholds for sequencing coverage depth per locus
 - [ipyrad](FIX)
 
 
-See Nielsen et al. 2011 and Buerkle and Gompert 2013 for articulate thoughts about this.
+See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and Buerkle and Gompert 2013 for articulate thoughts about this.
 
 # Organization and Workflow for *Krascheninnikovia lanata* GBS 
 Organizational notes and code for =rangewide sampling for landscape genomic analyses
@@ -30,36 +30,52 @@ Organizational notes and code for =rangewide sampling for landscape genomic anal
 
 We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023. 
 
-## This file contains code and notes for
-1) cleaning contaminants using tapioca
-2) parsing barcodes
-3) splitting fastqs 
-4) de novo assembly
-5) reference based assembly
-6) calling variants
-7) filtering
-8) entropy for genotype probabilities.
+### This file contains code and notes for
+1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)  
+    a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)  
+    b. [Parsing barcodes](#1b-barcode-parsing)  
+    c. [Splitting fastqs](#1c-splitting-fastqs)  
+2) [ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)  
+    a. [Directory & file prep](#2a-directory--file-prep)  
+    b. [Generate unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)
+3) MAPPING  
 
-## 1. Cleaning contaminants
+4) CALLING VARIANTS   
+de novo assembly
+5) FILTERING  
+reference based assembly
+6) GENOTYPE PROBABILITIES
+
+# 1. Initial Sequence Processing
+
+## 1a. Cleaning contaminants
 
 Being executed on ponderosa using tapioca pipeline. Commands in two bash scripts (cleaning_bash_CADE.sh and cleaning_bash_SEGI.sh), executed as below (6/9/23). This was for one S2 NovaSeq lanes generated in late December 2022.
 
 Decompress fastq file:
 
-    $ gunzip KRLA_S1_L001_R1_001.fastq.gz
+```sh
+gunzip KRLA_S1_L001_R1_001.fastq.gz
+```
 
-Number of reads **before** cleaning:
+Determine number of reads **before** cleaning:
 
-    $ nohup grep -c "^@" KRLA_S1_L001_R1_001.fastq > KRLA_number_of_rawreads.txt &
-    ## raw reads: 
+```sh
+nohup grep -c "^@" KRLA_S1_L001_R1_001.fastq > KRLA_number_of_rawreads.txt &
+```
+**RAW READS FOR KRLA:**  
 
 To run cleaning_bash* tapioca wrapper, exit conda environment, load modules, and run bash scripts.
 
-    $ module load fqutils/0.4.1
-    $ module load bowtie2/2.2.5
-    
-    $ bash cleaning_bash_KRLA.sh &
-
+```sh
+module load fqutils/0.4.1
+```
+```sh
+module load bowtie2/2.2.5
+```
+```sh   
+bash cleaning_bash_KRLA.sh &
+```
 
 After .clean.fastq has been produced, rm raw data:
 
@@ -74,7 +90,7 @@ Number of reads **after** cleaning:
     ## reads after cleaning:
 
 
-## 2. Barcode parsing:
+## 1b. Barcode parsing:
 
 
 Be sure to deactivate conda environment before running the below steps. Barcode keyfiles are `/working/parchman/KRLA/KRLA_barcode_key.csv` 
@@ -94,7 +110,7 @@ Parsing KRLA library:
     Number of seqs with potential MSE adapter in seq: 321195
     Seqs that were too short after removing MSE and beyond: 428
 
-## 3. splitting fastqs
+## 1c. splitting fastqs
 
 
 For KRLA, doing this in `/working/parchman/KRLA/splitfastqs`
@@ -119,7 +135,7 @@ gzipped the parsed*fastq files for now, but delete once patterns and qc are veri
 # Workflow for assembly and variant calling for GBS data
 Here we will organize thoughts, details, justification, and code for all steps, from raw data to final filtered genotype matrices for population genetic analyes
 
-## I. Denovo assembly to generate a consensus reference for mapping reads prior to genotyping.
+# 2. Denovo assembly to generate a consensus reference for mapping reads prior to genotyping.
 
 - when to use reference based
 - when to not use reference based and why
@@ -134,38 +150,81 @@ Here we will organize thoughts, details, justification, and code for all steps, 
 
 We are exactly following linux commands and pipelines from the workflow for dDocent (Puritz et al. 2014). See also link to [Ddocent](http://www.ddocent.com//)
 
-#### 1. gzip files (takes time)
-Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default). This step is only necessary if fastq files are not compressed when you start. `dDocent` reads `.gz` compressed files.
+### 2a. Directory & file prep
+
+**gzip files (takes time)**  
+*Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default). This step is only necessary if fastq files are not compressed when you start. `dDocent` reads `.gz` compressed files.*
     
-    $ nohup gzip *fastq &>/dev/null &
+```sh
+nohup gzip *fastq &>/dev/null &
+```
 
-#### 2. make list of individual IDs from all fastq files
+**Create directories for individual fastq files and assembly files**  
+*Link to overall directory structure here for reference*
+
+```sh
+cd ~/me/KRLA/
+```
+
+```sh
+mkdir fastq
+```
+
+```sh
+mkdir assembly
+```
+
+**Move COMPRESSED fastq files to 'fastq' directory**  
+*Make sure you zip/compress before moving to working directory. It will be much faster.*
+
+```sh
+cd fastq/
+```
+
+```sh
+nohup cp /ENTERDIRECTORYWHEREWHEREWEWANTTOPROCESSCONTAMINANTSHERE/*.fastq.gz . &> /dev/null &
+```
+
+**Check  that correct number of individual fastq files have been moved**
+
+```sh
+ls *.fastq.gz -1 | wc -l
+```
+
+*Total KRLA individuals: **497***
+
+#### The substeps below serve to retain only unique sequences so that the computational scope and energy of the denovo clustering task are reduced. In otherwords, there is no reason to use 100 identical sequences, but such use would increase compute time and memory usage.
+
+### 2b. Generate 'unique' sequence files for each individual
+
+**Make list of individual IDs from all fastq files**
     
-    $ ls *.fastq.gz | sed -i'' -e 's/.fastq.gz//g' > namelist
+```sh
+ls *.fastq.gz | sed -e 's/.fastq.gz//g' > nameList
+```
 
-#### 3. The substeps below serve to retain only unique sequences so that the computational scope and energy of the denovo clustering task are reduced. In otherwords, there is no reason to use 100 identical sequences, but such use would increase compute time and memory usage.
+**Set some variables that will be used to process sequences from individual fastqs in next step**
 
-#### 3a. per individual, create file with unique sequences and count of occurrences 
+```sh
+AWK1='BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}'
+AWK2='!/>/'
+AWK3='!/NNN/'
+PERLT='while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}'
+```
 
- First, set some variables (run as one chunk command, instant)
+**Use variables to scan through fastq files and generate \*.uniq.seqs files for each individual (takes a few minutes)**  
+*Insert more explanation here*
 
-    $ AWK1='BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}'
-    AWK2='!/>/'
-    AWK3='!/NNN/'
-    PERLT='while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}'
-    
-#### 3b. Use variables to scan through fastq files and generate *.uniq.seqs files for each individual (takes a few minutes)
-    
-    $ nohup cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$AWK2' | perl -e '$PERLT' > {}.uniq.seqs" &> /dev/null &
-    
-#### 3c. Combine all files into one (not required, but useful for understanding size of initial sequence pool for assembling a reference genome)
-    
-    $ cat *.uniq.seqs > uniq.seqs
+```sh
+cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$AWK2' | perl -e '$PERLT' > {}.uniq.seqs" &> /dev/null &
+```
 
-#### 3d. Get number of sequences by
+**Check progress**  
+*Should eventually have same number of uniq.seqs files as fasta.gz files*
 
-    $ wc -l uniq.seqs
-        ENTER KRLA NUMBER HERE
+```sh
+ls *.uniq.seqs | sed -e 's/.fastq.gz//g' > nameList
+```
 
 ### Notes here about 'optimizing' parameters in the assembly generation process...
 Seth can add a description of what the 'refOpt.sh' attempts to do (i.e. what Trevor does on pronghorn). Because that method is testing parameter effects across a subset of individuals, the inference is kind of janky. Another possibility is to explore effect of parameter variation on alternate assemblies using all individuals. Processing time (day-ish) and disk space is honestly not that big relative to this whole pipeline and pretty feasible on ponderosa (with potential to improve efficiency still). Might be worth doing in this case just to get a more in-depth understanding of things even if we decide it's not worth it on future projects...
@@ -180,17 +239,18 @@ where `<k>` and `<i>` are your chosen parameters. Typically chosen values are so
 
 For reference here and to see what steps are being done to generate this subset of sequences, selectContigs.sh is copied below:    
 
-    #!/bin/bash
+```sh
+#!/bin/bash
 
-    parallel --no-notice -j 16 mawk -v x=$1 \''$1 >= x'\' ::: *.uniq.seqs \
-	    | cut -f2 \
-	    | perl -e 'while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}' \
-	    | mawk -v x=$2 '$1 >= x' \
-	    | cut -f2 \
-	    | mawk '{c= c + 1; print ">Contig_" c "\n" $1}' \
-	    | sed -e 's/NNNNNNNNNN/\t/g' \
-	    | cut -f1
-
+parallel --no-notice -j 16 mawk -v x=$1 \''$1 >= x'\' ::: *.uniq.seqs \
+    | cut -f2 \
+    | perl -e 'while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}' \
+    | mawk -v x=$2 '$1 >= x' \
+    | cut -f2 \
+    | mawk '{c= c + 1; print ">Contig_" c "\n" $1}' \
+    | sed -e 's/NNNNNNNNNN/\t/g' \
+    | cut -f1
+```
 
 The above will produce files that look like knin.seqs... explain.
 
@@ -198,14 +258,18 @@ The above will produce files that look like knin.seqs... explain.
 
 
 #### 5. For ponderosa, load the cd-hit module and run cd-hit-est for contig clustering.
-   
-    $ module load cd-hit/4.6
+
+```sh   
+module load cd-hit/4.6
+```
 
 Run `cd-hit-est` for chosen clustering similarity threshold. Helpful documentation for cd-hit found [here](https://github.com/weizhongli/cdhit/wiki/3.-User's-Guide#user-content-CDHITEST).
     
 Most basic running of cd-hit looks like 
 
-    $ nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.92 &>/dev/null &
+```sh
+nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.92 &>/dev/null &
+```
 
 + `-M ` - maximum memory allowed, default is 800M
     + if on ponderosa, set to 0 (unlimited), not a limiting factor here, but check with `htop`
@@ -225,7 +289,9 @@ For reference, a cd-hit of c=0.9 typically takes 5-10 minutes over 32 CPUs, with
 
 If generating multiple assemblies, we can summarize the information into a file (here called *assemblyComparison*) via
 
-    $ grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
+```sh
+grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
+```
 
 *Will add some code and/or images of plots for these comparisons later*
 
