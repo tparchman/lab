@@ -35,7 +35,7 @@ We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023.
     a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)  
     b. [Parsing barcodes](#1b-barcode-parsing)  
     c. [Splitting fastqs](#1c-splitting-fastqs)  
-2) [ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)  
+2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)  
     a. [Directory & file prep](#2a-directory--file-prep)  
     b. [Generate unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)
 3) MAPPING  
@@ -208,7 +208,6 @@ ls *.fastq.gz | sed -e 's/.fastq.gz//g' > nameList
 ```sh
 AWK1='BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}'
 AWK2='!/>/'
-AWK3='!/NNN/'
 PERLT='while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}'
 ```
 
@@ -232,7 +231,10 @@ Seth can add a description of what the 'refOpt.sh' attempts to do (i.e. what Tre
 #### 4. (Required regardless of any 'optimization') select sequences according to a minimum number of occurrences within a given individual (k) and the minimum number of individuals the sequence occurs in (i)
 Simpler to do this step as a script that just pipes the steps through and avoids generating unnecessary intermediate files. Run time is roughly 2-10 minutes. Current version of this script is at *ponderosa:/working/romero/scripts/selectContigs.sh*. As currently written, run **within the directory that has .uniq.seqs** files as
 
-    $ nohup bash /working/romero/scripts/selectContigs.sh <k> <i> > k<k>.i<i>.seqs &> /dev/null &
+```SH
+nohup bash /working/romero/scripts/selectContigs.sh 4 2 > k4.i2.seqs &> /dev/null &
+```
+
 
 where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.
 
