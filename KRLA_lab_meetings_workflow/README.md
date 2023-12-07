@@ -1,154 +1,213 @@
-# Workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, or whatever else people want to call it)
+# Range-wide landscape genomics: sample organization and GBS workflow  
 
-## Canned software packages or computational workflows for handling this type of data:
+This document presents our workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, etc). Several canned software packages or computational workflows exist for handling this type of data. These methods rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. The biggest cost of using these methods is throwing away much, if not most, of the data.
 
-These methods all rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. We will get into this later, but this is a major problem. Biggest cost of using these types of methods is throwing away much if not most of the data.
-
-- [stack](FIX)
-- [Ddocent](http://www.ddocent.com//)
-- [ipyrad](FIX)
-
+* [Stacks](http://catchenlab.life.illinois.edu/stacks/)
+* [Ddocent](http://www.ddocent.com//)
+* [ipyrad](https://ipyrad.readthedocs.io/en/master/)
 
 See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and Buerkle and Gompert 2013 for articulate thoughts about this.
 
-# Organization and Workflow for *Krascheninnikovia lanata* GBS 
-Organizational notes and code for =rangewide sampling for landscape genomic analyses
-
-# Range-wide landscape genomics: sample organization and GBS workflow 
-
-## Sample organization
-- Full information on DNAs for each individual sampled across natural distribution can be found in `XXXXXXXXXX`. This file also has the updated plate maps with specified IDs.
-
-- **NOTE** DNA was extracted in December 2022 at AG Biotech. Plates in lab freezer need to be tranported to -80.
-
-## Notes on library preparation
-
-### 12/19-12/22: R/L and PCR for plates 1-6. Master mix in `KRLA_RFseq_mastermixcockatils.xlsx`.
+## Index
+1. Species information
+2. File structure
+3. Sample collection
+4. DNA extraction
+5. Library preparation
+6. Sequencing
+7. Sequence Processing
+	1. Cleaning contaminants
+	2. 
 
 
-## Data analysis: contaminant cleaning, barcode parsing, data storage, directory organization, and initial analyses.
-
-We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023. 
-
-### This file contains code and notes for
-1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)  
+1) [Sequence Processing](#sequence-processing)  
     a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)  
     b. [Parsing barcodes](#1b-barcode-parsing)  
     c. [Splitting fastqs](#1c-splitting-fastqs)  
 2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)  
     a. [Directory & file prep](#2a-directory--file-prep)  
-    b. [Generate unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)
+    b. [Generate unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)  
 3) MAPPING  
-
 4) CALLING VARIANTS   
 de novo assembly
 5) FILTERING  
 reference based assembly
 6) GENOTYPE PROBABILITIES
 
-# 1. Initial Sequence Processing
+## Species information: *Krascheninnikovia lanata*
 
-## 1a. Cleaning contaminants
+Winterfat, or Lamb's Tail, is a long-lived, fast-growing, evergreen shrub. It is found in many habitats, but notably is a halophyte, living in the salty soils of the alkali flats in the Great Basin.
 
-Being executed on ponderosa using tapioca pipeline. Commands in two bash scripts (cleaning_bash_CADE.sh and cleaning_bash_SEGI.sh), executed as below (6/9/23). This was for one S2 NovaSeq lanes generated in late December 2022.
+## File structure
 
-Decompress fastq file:
+* Create a project folder (wherever you want it) called KRLA with `mkdir KRLA`
+* Subfolders will be created throughout the analysis
 
-```sh
-gunzip KRLA_S1_L001_R1_001.fastq.gz
-```
+## Sample collection
 
-Determine number of reads **before** cleaning:
+* Individuals were sampled across their natural distribution
+* Information about sampling can be found at [insert doc path here]
 
-```sh
-nohup grep -c "^@" KRLA_S1_L001_R1_001.fastq > KRLA_number_of_rawreads.txt &
-```
-**RAW READS FOR KRLA:**  
+## DNA extraction
 
-To run cleaning_bash* tapioca wrapper, exit conda environment, load modules, and run bash scripts.
+* Performed by AG Biotech in 12/2022
+* DNA information with plate maps and IDs can be found at [insert doc path here]
 
-```sh
-module load fqutils/0.4.1
-```
-```sh
-module load bowtie2/2.2.5
-```
-```sh   
-bash cleaning_bash_KRLA.sh &
-```
+## Library preparation
 
-After .clean.fastq has been produced, rm raw data:
+* Performed in Parchman Lab in 12/2022
+* [add upstream path]KRLA\_RFseq\_mastermixcockatils.xlsx contains information about reagents used in library prep
+* R/L and PCR for plates 1-6
 
-    $ rm -rf KRLA_S1_L001_R1_001.fastq &
-   
+## Sequencing
 
-Raw data will stay stored in: /archive/parchman_lab/rawdata_to_backup/FRLA/
+* 1 lane of S2 chemistry NovaSeq data at UTGSAF in 03/2023
+* sequence results in [add upstream path]KRLA\_S1\_L001\_R1\_001.fastq.gz
 
-Number of reads **after** cleaning:
+## Data cleaning
 
-    $ nohup grep -c "^@" KRLA.clean.fastq > FRLA1_clean_reads.txt &
-    ## reads after cleaning:
+### Cleaning contaminants
+
+* **Goal:** Remove reads that are not from the target organims
+* Performed 06/09/23
+
+1. Create a data folder inside KRLA folder:
+	
+	```sh
+	mkdir data
+	```
+	
+2. Copy the sequencing results to your data folder:
+
+	```sh
+	cd data
+	cp /archive/parchman_lab/rawdata_to_backup/KRLA/KRLA_S1_L001_R1_001.fastq.gz .
+	```
+	
+3. Decompress the file with:
+
+	```sh
+	gunzip KRLA_S1_L001_R1_001.fastq.gz
+	```
+
+4. Count the reads **before** cleaning with:
+
+	```sh
+	$ nohup grep -c "^@" KRLA_S1_L001_R1_001.fastq > KRLA_number_of_rawreads.txt &
+	```
+	
+	* `nohup` (no hang up) allows the command to keep running, even if you close the terminal, lose connection with the server, or log out.
+	* `&` allows the command to run in the background.
+	* `grep -c` will count the number of occurances of the pattern ("^@") in the file (KRLA_S1_L001_R1_001.fastq).
+	* the result file (KRLA_number_of_rawreads.txt) will contain the initial number of reads 
+	* **Reads before cleaning:** n
+
+5. Run the cleaning script (note: the script will need to be edited to change the paths to the appropriate files):
+
+	```sh
+	cp path/to/cleaning/script.sh .
+	nano cleaning_bash_KRLA.sh
+	conda deactivate
+	module load fqutils/0.4.1
+	module load bowtie2/2.2.5
+	bash cleaning_bash_KRLA.sh &
+	```
+	
+	* `module load` is needed to allow access to the modules used in the script
+	* fqutils and bowtie2 are used in the cleaning script
+	* cleaning\_bash\_KRLA.sh uses the tapioca pipeline's contamination analysis script to remove artifacts from:
+		* Illumina oligos
+		* PhiX
+		* *E. coli*
+
+4. Check that KRLA.clean.fastq has been created (from cleaning script), then remove the raw data file (from KRLA/data - a backup is stored at /archive/parchman\_lab/rawdata\_to\_backup/KRLA) :
+
+	```sh
+	ls
+	rm -rf KRLA_S1_L001_R1_001.fastq &
+	```
+	
+5. Count the reads **after** cleaning with:
+
+	```sh
+	nohup grep -c "^@" KRLA.clean.fastq > KRLA_clean_reads.txt &
+	```
+	
+	* reads after cleaning are typically ~75% of reads before cleaning
+	* **Reads after cleaning:** n
 
 
-## 1b. Barcode parsing:
+### Barcode parsing
+
+* **Goal:** Remove barcode and adapter sequences from reads, place this information (what individual the reads came from) in the read ID line
+
+1. Run parsing script:
+
+	```sh
+	cp /working/parchman/KRLA/parse_barcodes769.pl .
+	cp /working/parchman/KRLA/KRLA_barcode_key.csv .
+	nohup perl parse_barcodes769.pl KRLA_barcode_key.csv KRLA.clean.fastq A00 &>/dev/null &
+	```
+	
+	* KRLA\_barcode\_key.csv provides the barcodes for each individual
+	* KRLA.clean.fastq are the clean reads from contaminant cleaning
+	* A00 is the sequencer ID (first 3 characters after @ in the fastq identifier)
+	* &>/dev/null prevents display of stdout
+
+2. View the parsing results (created by the parsing script):
+
+	```sh
+	less parsereport_KRLA.clean.fastq
+	```
+	
+	* results compare good and bad mids (molecular IDs), bad mids are usually <5% of total mids
+	* the other removed results are typically insignificant
+	* **Parse report:**
+		* Good mids count: 1571963061
+		* Bad mids count: 73508410
+		* Number of seqs with potential MSE adapter in seq: 321195
+		* Seqs that were too short after removing MSE and beyond: 428
+
+### Splitting fastqs
+
+* **Goal:** Sort the reads that are in the one .fastq file into multiple .fastq files, one for each individual
+
+1. Create an IDs file:
+
+	```sh
+	cut -f 3 -d "," KRLA_barcode_key.csv | grep "_" > KRLA_ids_noheader.txt
+	```
+	
+	* `-f 3` option looks at the 3rd field (column)
+	* `-d ","` option specifies comma as delimiter
+	* `cut` extracts that column and pipes it to `grep`
+	* `grep` ensures the ID column extracted contains an underscore (this removes the header line / label)
+
+2. Split the (cleaned and parsed) fastq files by individual ID:
+
+	```sh
+	cp /working/parchman/KRLA/splitfastqs/splitFastq_universal_regex.pl .
+	nohup perl splitFastq_universal_regex.pl KRLA_ids_noheader.txt parsed_KRLA.clean.fastq &>/dev/null &
+	```
+	
+	* the perl script creates a separate fastq file for each individual's reads
+
+3. Compress all of the resultant fastq files:
+
+	`nohup gzip *fastq &>/dev/null &`
+
+## Denovo assembly
+
+Denovo assemblies uses your reads to generate a consensus artificial reference to map your reads against. This is the only option in some systems where there is no reference genome available. Sometimes it is still prefered, depending on the genome divergence between your species or population and that of the reference genome. If you are using a reference genome, download the reference and skip this step.
+
+There are many tools available for denovo assembly. We will be using [CD-HIT](https://www.bioinformatics.org/cd-hit/) in a workflow from [dDocent](http://www.ddocent.com/) (Puritz et al. 2014). See [LaCava et al. 2020](https://onlinelibrary.wiley.com/doi/10.1111/1755-0998.13108) for a comparison of tools.
+
+This workflow begins with the gziped .fastq files in KRLA/data.
 
 
-Be sure to deactivate conda environment before running the below steps. Barcode keyfiles are `/working/parchman/KRLA/KRLA_barcode_key.csv` 
-
-Parsing KRLA library:
-
-    $ nohup perl parse_barcodes768.pl KRLA_barcode_key.csv KRLA.clean.fastq A00 &>/dev/null &
-
-
-
-
-`NOTE`: the A00 object is the code that identifies the sequencer (first three characters after the @ in the fastq identifier).
-
-    $ less parsereport_KRLA.clean.fastq
-    Good mids count: 1571963061
-    Bad mids count: 73508410
-    Number of seqs with potential MSE adapter in seq: 321195
-    Seqs that were too short after removing MSE and beyond: 428
-
-## 1c. splitting fastqs
-
-
-For KRLA, doing this in `/working/parchman/KRLA/splitfastqs`
-
-Make ids file
-
-    $ cut -f 3 -d "," KRLA_barcode_key.csv | grep "_" > KRLA_ids_noheader.txt
-
-
-Split fastqs by individual
-
-    $ nohup perl splitFastq_universal_regex.pl KRLA_ids_noheader.txt parsed_KRLA.clean.fastq &>/dev/null &
-
-
-'gzip' all .fastq files
-
-gzipped the parsed*fastq files for now, but delete once patterns and qc are verified.
-
-    $ nohup gzip *fastq &>/dev/null &
-    
-
-# Workflow for assembly and variant calling for GBS data
-Here we will organize thoughts, details, justification, and code for all steps, from raw data to final filtered genotype matrices for population genetic analyes
-
-# 2. Denovo assembly to generate a consensus reference for mapping reads prior to genotyping.
-
-- when to use reference based
-- when to not use reference based and why
-- how to run reference based assembly
-- how to run denovo assembly to generate artificial reference
-
-### choices for clustering/assembly methods for this type of step
-- [LaCava et al. 2020](./papers/LaCava_etal_2020.pdf)
 
 
 ### Building a consensus reference of regions sequenced with the GBS design using `CDhit`
-
-We are exactly following linux commands and pipelines from the workflow for dDocent (Puritz et al. 2014). See also link to [Ddocent](http://www.ddocent.com//)
 
 ### 2a. Directory & file prep
 
