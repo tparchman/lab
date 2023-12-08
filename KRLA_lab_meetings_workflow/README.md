@@ -1,6 +1,6 @@
 # Workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, or whatever else people want to call it)
 
-## Canned software packages or computational workflows for handling this type of data:
+### Canned software packages or computational workflows for handling this type of data:
 
 These methods all rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. We will get into this later, but this is a major problem. Biggest cost of using these types of methods is throwing away much if not most of the data.
 
@@ -12,7 +12,8 @@ These methods all rely on set thresholds for sequencing coverage depth per locus
 See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and Buerkle and Gompert 2013 for articulate thoughts about this.
 
 # Organization and Workflow for *Krascheninnikovia lanata* GBS 
-Organizational notes and code for =rangewide sampling for landscape genomic analyses
+<img src="images/KRLAplant.jpg" width="310"> &emsp; &emsp;
+<img src="images/KRLAmap.png" width="401">
 
 # Range-wide landscape genomics: sample organization and GBS workflow 
 
@@ -31,13 +32,16 @@ Organizational notes and code for =rangewide sampling for landscape genomic anal
 We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023. 
 
 ### This file contains code and notes for
-1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)  
-    a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)  
-    b. [Parsing barcodes](#1b-barcode-parsing)  
-    c. [Splitting fastqs](#1c-splitting-fastqs)  
-2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)  
-    a. [Directory & file prep](#2a-directory--file-prep)  
-    b. [Generate unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)
+
+1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)\
+    a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)\
+    b. [Parsing barcodes](#1b-barcode-parsing)\
+    c. [Splitting fastqs](#1c-splitting-fastqs)
+2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)\
+    a. [Directory & file prep](#2a-directory--file-prep)\
+    b. [Generating unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)\
+    c. [Sequence subsetting for alignment]
+
 3) MAPPING  
 
 4) CALLING VARIANTS   
@@ -224,6 +228,8 @@ cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$
 ```sh
 ls *.uniq.seqs | sed -e 's/.fastq.gz//g' > nameList
 ```
+### 2c. 
+
 
 ### Notes here about 'optimizing' parameters in the assembly generation process...
 Seth can add a description of what the 'refOpt.sh' attempts to do (i.e. what Trevor does on pronghorn). Because that method is testing parameter effects across a subset of individuals, the inference is kind of janky. Another possibility is to explore effect of parameter variation on alternate assemblies using all individuals. Processing time (day-ish) and disk space is honestly not that big relative to this whole pipeline and pretty feasible on ponderosa (with potential to improve efficiency still). Might be worth doing in this case just to get a more in-depth understanding of things even if we decide it's not worth it on future projects...
