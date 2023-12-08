@@ -9,30 +9,31 @@ This document presents our workflow and rationale for genotype inference from hi
 See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and Buerkle and Gompert 2013 for articulate thoughts about this.
 
 ## Index
+
 1. Species information
 2. File structure
 3. Sample collection
 4. DNA extraction
 5. Library preparation
 6. Sequencing
-7. Sequence Processing
+7. Data cleaning
 	1. Cleaning contaminants
-	2. 
+	2. Barcode parsing
+	3. Splitting fastqs
+8. Denovo assembly
+	1. Prepare directories and files
+	2. Generate unique sequence sets
+	3. Assemble from sequence sets
+9. Mapping reads
 
+**... add more as we work**
 
-1) [Sequence Processing](#sequence-processing)  
-    a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)  
-    b. [Parsing barcodes](#1b-barcode-parsing)  
-    c. [Splitting fastqs](#1c-splitting-fastqs)  
-2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)  
-    a. [Directory & file prep](#2a-directory--file-prep)  
-    b. [Generate unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)  
-3) MAPPING  
-4) CALLING VARIANTS   
-de novo assembly
-5) FILTERING  
-reference based assembly
-6) GENOTYPE PROBABILITIES
+### To do:
+
+* Add explanation of selectContigs.sh parts
+* Add estimated run times for each step
+* Add info about how fastq / assmebly folders are used? 
+* Add full paths for scripts used
 
 ## Species information: *Krascheninnikovia lanata*
 
@@ -229,7 +230,8 @@ This workflow begins with the gziped .fastq files in KRLA/clean\_data.
 	* **Number of KRLA individuals:** 497
 
 ### Generate unique sequence sets
-There is no reason to use 100 identical sequences for the denovo clustering task, as it will only increase the time and the memory and energy usage.
+
+There is no reason to use 100 identical sequences for the denovo clustering task, as it will only increase memory and energy usage and runtime.
 
 1. Make a list of individual IDs from the .fastq.gz files
 
@@ -275,80 +277,77 @@ There is no reason to use 100 identical sequences for the denovo clustering task
 	```sh
 	ls *.uniq.seqs | sed -e 's/.fastq.gz//g' > nameList
 	```
+	
+### Assemble from sequence sets
+	
+4. Select a value of i (number of individuals a sequence occurs in) and k (number of times a sequence appears in an individual) to filter your .uniq.seqs files. This will speed up the assembly step.
+
+	* Values are usually between 2 and 10
+	* See note below on how to iteratively repeat steps 4-6 with different parameter values
 
 
+5. Generate the collection of sequences that meet your i and k criteria by running the `selectContigs.sh` script. For example when k=4 and i=2:
 
-#### 4. (Required regardless of any 'optimization') select sequences according to a minimum number of occurrences within a given individual (k) and the minimum number of individuals the sequence occurs in (i)
-Simpler to do this step as a script that just pipes the steps through and avoids generating unnecessary intermediate files. Run time is roughly 2-10 minutes. Current version of this script is at *ponderosa:/working/romero/scripts/selectContigs.sh*. As currently written, run **within the directory that has .uniq.seqs** files as
+	```sh
+	cp /working/romero/scripts/selectContigs.sh .
+	nohup bash selectContigs.sh 4 2 > k4.i2.seqs &> /dev/null &
+	```
+	
+	* The file k4.12.seqs will contain only sequences that meet these criteria
+	* selectContigs.sh contents:
 
-```SH
-nohup bash /working/romero/scripts/selectContigs.sh 4 2 > k4.i2.seqs &> /dev/null &
-```
+		```sh
+		#!/bin/bash
+		
+		parallel --no-notice -j 16 mawk -v x=$1 \''$1 >= x'\' ::: *.uniq.seqs \
+    	| cut -f2 \
+    	| perl -e 'while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}' \
+    	| mawk -v x=$2 '$1 >= x' \
+    	| cut -f2 \
+    	| mawk '{c= c + 1; print ">Contig_" c "\n" $1}' \
+    	| sed -e 's/NNNNNNNNNN/\t/g' \
+    	| cut -f1
+		```
+
+6. Use [CD-HIT](https://github.com/weizhongli/cdhit/wiki/3.-User's-Guide#user-content-CDHITEST) to create a denovo assembly from these reads, at a chosen clustering similarity threshold (c).
+	
+	```sh
+	module load cd-hit/4.6
+	nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.92 &>/dev/null &
+	```
+	
+	* `<inputFile>` is your file from step 5 (k4.i2.seqs)
+	* `<outputFile>` is the filename you want for your output. CD-HIT will generate 2 output files:
+		* 1) outputFile (no extension)
+		* 2) outputFile.clstr
+	* `-M` is max memory allowance, 0 sets it to unlimited, default is 800M
+	* `-T` is max number of threads / CPUs, 0 sets it to unlimited (32), it may be better to set it to ~16 to not take up the entire server
+	* `-c` is the clustering similarity (how similar sequences need to be to be joined together)
+		* 0.95 is usually a good clustering similarity to use, but you should take into account how diverged the populations or species you are studying are
+		* Higher values of c create more contigs and runs faster
+		* Lower values of c create fewer contigs and runs slower
+
+**Note 1:** If you are interested in comparing the results of differnt combinations of i, k, and c parameters effect the resultant number of contigs, you can use the genContigSets.sh script to create kn.in.seqs files for many combinations (each combination of i and k across 2,4,6,8, and 10), and then run each of those files through CD-HIT and compare results. However, it is difficult to interpret the number of contigs (if it is over- or under-assembled).
+
+* If you do compare results from multiple combinations of parameters, it would make sense to set your <outputFile> name to include the i, k, and c parameters (like rf4.2.92 for k = 4, i = 2, and c = 0.92, this will also allow easy detection of assembly files to compare number of contigs)
+* **Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...**
+* To summarize the information from different assemblies:
+	
+	```sh
+	grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
+	less assemblyComparison
+	```
+	
+	* **Will add some code and/or images of plots for these comparisons later**
+
+**Note 2:** Another option for comparing assembly parameters is.....
+
+* what the 'refOpt.sh' attempts to do (i.e. what Trevor does on pronghorn). 
+* testing parameter effects across a subset of individuals vs all individuals
+* Processing time (day-ish) and disk space is honestly not that big relative to this whole pipeline and pretty feasible on ponderosa (with potential to improve efficiency still)
+* Might be worth doing in this case just to get a more in-depth understanding of things even if we decide it's not worth it on future projects...
 
 
-where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.
-
-
-For reference here and to see what steps are being done to generate this subset of sequences, selectContigs.sh is copied below:    
-
-```sh
-#!/bin/bash
-
-parallel --no-notice -j 16 mawk -v x=$1 \''$1 >= x'\' ::: *.uniq.seqs \
-    | cut -f2 \
-    | perl -e 'while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}' \
-    | mawk -v x=$2 '$1 >= x' \
-    | cut -f2 \
-    | mawk '{c= c + 1; print ">Contig_" c "\n" $1}' \
-    | sed -e 's/NNNNNNNNNN/\t/g' \
-    | cut -f1
-```
-
-The above will produce files that look like knin.seqs... explain.
-
-**SETH** Add a description of the files in the 'assembly' directory we talked about, how or why you would choose one for 
-
-
-#### 5. For ponderosa, load the cd-hit module and run cd-hit-est for contig clustering.
-
-```sh   
-module load cd-hit/4.6
-```
-
-Run `cd-hit-est` for chosen clustering similarity threshold. Helpful documentation for cd-hit found [here](https://github.com/weizhongli/cdhit/wiki/3.-User's-Guide#user-content-CDHITEST).
-    
-Most basic running of cd-hit looks like 
-
-```sh
-nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.92 &>/dev/null &
-```
-
-+ `-M ` - maximum memory allowed, default is 800M
-    + if on ponderosa, set to 0 (unlimited), not a limiting factor here, but check with `htop`
-+ `-T` - maximum number of threads (effectively CPUs)
-    + 0 is all available (32 on ponderosa)
-    + if running multiple cd-hits in parallel, something like 16 might make sense? Just so the whole server isn't bogged down. Run times are still reasonable at 16
-+ `-c` - clustering similarity (i.e. how similar sequences have to be to be joined into a contig)
-    + Values to try might be 0.8-0.98
-    + Note as c increases, you generate **more** contigs and the cd-hit process runs **faster**
-+ `<inputFile>` is generated in previous step (something like *k4.i6.seqs*). If generating multiple assemblies for comparison, Seth uses a naming convention like *rf.4.6.90* where k=4, i=6, and c=0.9. This makes for some easy parsing of information for comparing/plotting changes in contig totals/information ratios as shown below.
-
-Note that for a given `<outputFile>` name, **2** files are generated - 1 with no file suffix (contigs only in fasta format) and 1 with .clstr suffix (with information on within contig cluster similarity).
-
-For reference, a cd-hit of c=0.9 typically takes 5-10 minutes over 32 CPUs, with lower c-values being slower, and higher being faster...
-
-*Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...*
-
-If generating multiple assemblies, we can summarize the information into a file (here called *assemblyComparison*) via
-
-```sh
-grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
-```
-
-*Will add some code and/or images of plots for these comparisons later*
-
-### Notes here about 'optimizing' parameters in the assembly generation process...
-Seth can add a description of what the 'refOpt.sh' attempts to do (i.e. what Trevor does on pronghorn). Because that method is testing parameter effects across a subset of individuals, the inference is kind of janky. Another possibility is to explore effect of parameter variation on alternate assemblies using all individuals. Processing time (day-ish) and disk space is honestly not that big relative to this whole pipeline and pretty feasible on ponderosa (with potential to improve efficiency still). Might be worth doing in this case just to get a more in-depth understanding of things even if we decide it's not worth it on future projects...
 
 ## II. Mapping reads from all individuals to reference, using `bwa`
 
