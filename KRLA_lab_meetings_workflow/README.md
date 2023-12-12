@@ -34,9 +34,7 @@ Will add to as needed. Just getting a basic structure started here.
 
 ```mermaid
 flowchart TD;
-    A(personal directory
-    /working/romero/) --> B(species folder
-    /romero/KRLA)
+    A(personal directory '/working/romero/') --> B(species folder '/romero/KRLA')
     B --> C(assembly)
     B --> D(fastq)
     B --> E(bwa)
