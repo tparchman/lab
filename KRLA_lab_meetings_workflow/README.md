@@ -38,7 +38,9 @@ flowchart TD;
     B --> C(assembly)
     B --> D(fastq)
     B --> E(bwa)
-    D --> F(497 *.fastq.gz files)
+    D --> F(fastq files <br> *.fastq.gz)
+    C --> G(seq subset files <br> e.g. k4.i2.seqs)
+    C --> H(assembly files <br> e.g. rf.4.2.92) 
 ```
 
 # GBS Workflow Table of Contents
