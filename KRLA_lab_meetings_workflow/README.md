@@ -7,7 +7,6 @@ Methods described in this document are meant to be thorough and allow for user c
 - [Ddocent](http://www.ddocent.com//)
 - [ipyrad](https://ipyrad.readthedocs.io/en/master/)
 
-
 See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](./papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
 
 # Focal Species (*Krascheninnikovia lanata*) Background & Sampling
@@ -173,13 +172,12 @@ cd fastq/
 nohup cp /working/parchman/KRLA/splitfastqs/*.fastq.gz . &> /dev/null &
 ```
 
-**Check  that correct number of individual fastq files have been moved**
+**Check  that correct number of individual fastq files have been moved**\
+*Total KRLA individuals: **497***
 
 ```sh
 ls *.fastq.gz -1 | wc -l
 ```
-
-*Total KRLA individuals: **497***
 
 ### 2B. GENERATE 'UNIQUE' SEQUENCE FILES FOR EACH INDIVIDUAL
 
@@ -207,15 +205,16 @@ cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$
 ```
 
 **Check progress**  
-*Should eventually have same number of uniq.seqs files as fasta.gz files*
+*Should eventually have same number of uniq.seqs files as fasta.gz files*\
+*for KRLA: 497*
 
 ```sh
-ls *.uniq.seqs | sed -e 's/.fastq.gz//g' > nameList
+ls *.uniq.seqs -1 | wc -l
 ```
 
 ### 2C. SUBSET SEQUENCES FOR CONTIG ALIGNMENT AND ASSEMBLY
 
-**Select a subset of all unique sequences to improve 
+**Select a subset of all unique sequences to improve...** 
 
 ```SH
 nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &> /dev/null &
