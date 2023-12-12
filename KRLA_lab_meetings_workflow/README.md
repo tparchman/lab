@@ -238,7 +238,7 @@ where `<k>` and `<i>` are your chosen parameters. Typically chosen values are so
 
 
 ```sh
-nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs2 &
+nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &
 ```
 
 
@@ -257,7 +257,7 @@ Run `cd-hit-est` for chosen clustering similarity threshold. Helpful documentati
 Most basic running of cd-hit looks like 
 
 ```sh
-nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.92 &>/dev/null &
+nohup cd-hit-est -i k4.i2.seqs -o rf.4.2.92 -M 0 -T 0 -c 0.92 &>/dev/null &
 ```
 
 + `-M ` - maximum memory allowed, default is 800M
