@@ -34,10 +34,11 @@ Will add to as needed. Just getting a basic structure started here.
 
 ```mermaid
 flowchart TD;
-    A(personal directory <br> /working/romero/) --> B(species folder '/romero/KRLA')
+    A(personal directory <br> /working/romero/) --> B(species folder <br> /romero/KRLA)
     B --> C(assembly)
     B --> D(fastq)
     B --> E(bwa)
+    D --> F(497 *.fastq.gz files)
 ```
 
 # GBS Workflow Table of Contents
