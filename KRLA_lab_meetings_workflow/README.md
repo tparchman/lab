@@ -10,7 +10,40 @@ The methods described in this document are meant to be thorough and allow for us
 
 See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](./papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
 
-## GBS Workflow Table of Contents
+# Focal Species (*Krascheninnikovia lanata*) Background & Sampling
+<img src="images/KRLAplant.jpg" width="310"> &emsp; &emsp;
+<img src="images/KRLAmap.png" width="401">
+
+&emsp; *Krascheninnikovia lanata* (winterfat) is a perennial shrub with a broad north/south distributional range spanning western Canada, U.S. and Mexico. The species is exclusive to North America and its current range is likely the result of southward expansion following two distinct migration events from eastern Mongolian lineages ~ 1.8 - 0.5 Mya.\
+&emsp; The species is a halophyte (salt-tolerant) and is one of the only species outside of the *Atriplex* complex to co-dominate the salt desert shrublands of the Great Basin. It is a highly nutritious source of forage which is notable given that it is prone to replacement by the toxic exotic *Halogeton glomeratus* within disturbed habitats. The common name 'winterfat' is indicative of the persistence of green leaves throughout the winter season and late fall phenology.\
+&emsp; Population sampling was a combined effort throughout 2021 - 2022 with Cathy Silliman doing collections for most of the populations in the west, central, and north Great Basin and Seth Romero gathering collections from the eastern Great Basin and Mojave. Anecdotally, many of the individuals in the north, central and eastern Great Basin were smaller in stature but part of broad near-monocultures that created consistent cover across broad areas. By contrast, many of the populations in the Mojave and southwest Great Basin were large individuals that occured in small islands or as sub-dominants with only a handful of individuals living in close proximity. The populations **DT** and **CL**, in particular, had nearly every individual sampled that could found at those locations.
+
+### Sample organization
+- Full information on DNAs for each individual sampled across natural distribution can be found in `XXXXXXXXXX`. This file also has the updated plate maps with specified IDs.
+
+- **NOTE** DNA was extracted in December 2022 at AG Biotech. Plates in lab freezer need to be tranported to -80.
+
+### Notes on library preparation
+
+12/19-12/22: R/L and PCR for plates 1-6. Master mix in `KRLA_RFseq_mastermixcockatils.xlsx`.\
+We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023. 
+
+# Overall Directory Structure
+
+Will add to as needed. Just getting a basic structure started here.
+
+```mermaid
+flowchart TD;
+    A(personal directory <br> /working/romero/) --> B(species folder <br> /romero/KRLA)
+    B --> C(assembly)
+    B --> D(fastq)
+    B --> E(bwa)
+    D --> F(fastq files <br> *.fastq.gz)
+    C --> G(seq subset files <br> e.g. k4.i2.seqs)
+    C --> H(assembly files <br> e.g. rf.4.2.92) 
+```
+
+# GBS Workflow Table of Contents
 
 1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)\
     a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)\
@@ -47,6 +80,8 @@ See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompe
 
 ## File structure
 
+where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.
+
 * Create a project folder (wherever you want it) called KRLA with `mkdir KRLA`
 * Subfolders will be created throughout the analysis
 
@@ -55,7 +90,12 @@ See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompe
 * Individuals were sampled across their natural distribution
 * Information about sampling can be found at [insert doc path here]
 
+
 ## DNA extraction
+
+```sh
+nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &
+```
 
 * Performed by AG Biotech in 12/2022
 * DNA information with plate maps and IDs can be found at [insert doc path here]
@@ -136,6 +176,11 @@ See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompe
 	
 7. Count the reads **after** cleaning with:
 
+
+```sh
+nohup cd-hit-est -i k4.i2.seqs -o rf.4.2.92 -M 0 -T 0 -c 0.92 &>/dev/null &
+```
+
 	```sh
 	nohup grep -c "^@" KRLA.clean.fastq > KRLA_clean_reads.txt &
 	```
@@ -144,10 +189,13 @@ See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompe
 	* **Reads after cleaning:** n
 
 
+
 ### Barcode parsing
 
 * **Goal:** Remove barcode and adapter sequences from reads, place this information (what individual the reads came from) in the read ID line
 
+
+=======
 1. Run parsing script:
 
 	```sh
@@ -352,7 +400,6 @@ There is no reason to use 100 identical sequences for the denovo clustering task
 * testing parameter effects across a subset of individuals vs all individuals
 * Processing time (day-ish) and disk space is honestly not that big relative to this whole pipeline and pretty feasible on ponderosa (with potential to improve efficiency still)
 * Might be worth doing in this case just to get a more in-depth understanding of things even if we decide it's not worth it on future projects...
-
 
 
 # 3. Mapping reads from all individuals to reference using `bwa`
@@ -604,6 +651,16 @@ After filtering, kept 598 out of 598 Individuals, kept 19384 out of a possible 1
 
 ### Appendix 1: Reference of useful commands (as far as what Parchman lab people like)
 Just an unorganized list for now, will clean up later...
+
+*Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...*
+
+If generating multiple assemblies, we can summarize the information into a file (here called *assemblyComparison*) via
+
+```sh
+grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
+```
+
+*Will add some code and/or images of plots for these comparisons later*
 
 + `parallel` - easiest way to run jobs in parallel across CPUs. See [GNU Parallel tutorial](https://www.gnu.org/software/parallel/parallel_tutorial.html)
     + `-j` - max jobs to run in parallel
