@@ -1,30 +1,29 @@
-# Range-wide landscape genomics: sample organization and GBS workflow  
+# Genotyping By Sequencing (GBS) - An Example Study
 
 This document presents our workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, etc). Several canned software packages or computational workflows exist for handling this type of data. These methods rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. The biggest cost of using these methods is throwing away much, if not most, of the data.
 
+The methods described in this document are meant to be thorough and allow for user control at each step of the bioinformatic process. However, 'simpler' alternatives exist in the form of canned software packages and other streamlined computational workflows. These methods all rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. This is highly problematic. Biggest cost of using these types of methods is throwing away much if not most of the data. Examples of such software/workflows include:
 * [Stacks](http://catchenlab.life.illinois.edu/stacks/)
 * [Ddocent](http://www.ddocent.com//)
 * [ipyrad](https://ipyrad.readthedocs.io/en/master/)
 
-See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and Buerkle and Gompert 2013 for articulate thoughts about this.
+See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](./papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
 
-## Index
+## GBS Workflow Table of Contents
 
-1. Species information
-2. File structure
-3. Sample collection
-4. DNA extraction
-5. Library preparation
-6. Sequencing
-7. Data cleaning
-	1. Cleaning contaminants
-	2. Barcode parsing
-	3. Splitting fastqs
-8. Denovo assembly
-	1. Prepare directories and files
-	2. Generate unique sequence sets
-	3. Assemble from sequence sets
-9. Mapping reads
+1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)\
+    a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)\
+    b. [Parsing barcodes](#1b-barcode-parsing)\
+    c. [Splitting fastqs](#1c-splitting-fastqs)
+2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)\
+    a. [Directory & file prep](#2a-directory--file-prep)\
+    b. [Generating unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)\
+    c. [Sequence subsetting for alignment](#2c-subset-sequences-for-contig-alignment-and-assembly)
+3) [READ MAPPING](#3-mapping-reads-from-all-individuals-to-reference-using-bwa)\
+    a. [Directory & file prep]()
+4) [CALLING VARIANTS]()
+5) [FILTERING]()
+6) [GENOTYPE PROBABILITIES]()
 
 **... add more as we work**
 
@@ -35,9 +34,13 @@ See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and Buerkle and Gompert
 * Add info about how fastq / assmebly folders are used? 
 * Add full paths for scripts used
 
-## Species information: *Krascheninnikovia lanata*
+## Species information (*Krascheninnikovia lanata*) 
+<img src="images/KRLAplant.jpg" width="310"> &emsp; &emsp;
+<img src="images/KRLAmap.png" width="401">
 
-Winterfat, or Lamb's Tail, is a long-lived, fast-growing, evergreen shrub. It is found in many habitats, but notably is a halophyte, living in the salty soils of the alkali flats in the Great Basin.
+&emsp; *Krascheninnikovia lanata* (winterfat) is a perennial shrub with a broad north/south distributional range spanning western Canada, U.S. and Mexico. The species is exclusive to North America and its current range is likely the result of southward expansion following two distinct migration events from eastern Mongolian lineages ~ 1.8 - 0.5 Mya.\
+&emsp; The species is a halophyte (salt-tolerant) and is one of the only species outside of the *Atriplex* complex to co-dominate the salt desert shrublands of the Great Basin. It is a highly nutritious source of forage which is notable given that it is prone to replacement by the toxic exotic *Halogeton glomeratus* within disturbed habitats. The common name 'winterfat' is indicative of the persistence of green leaves throughout the winter season and late fall phenology.\
+&emsp; Population sampling was a combined effort throughout 2021 - 2022 with Cathy Silliman doing collections for most of the populations in the west, central, and north Great Basin and Seth Romero gathering collections from the eastern Great Basin and Mojave. Anecdotally, many of the individuals in the north, central and eastern Great Basin were smaller in stature but part of broad near-monocultures that created consistent cover across broad areas. By contrast, many of the populations in the Mojave and southwest Great Basin were large individuals that occured in small islands or as sub-dominants with only a handful of individuals living in close proximity. The populations **DT** and **CL**, in particular, had nearly every individual sampled that could found at those locations.
 
 ## File structure
 
@@ -121,14 +124,14 @@ Winterfat, or Lamb's Tail, is a long-lived, fast-growing, evergreen shrub. It is
 		* PhiX
 		* *E. coli*
 
-4. Check that KRLA.clean.fastq has been created (from cleaning script), then remove the raw data file (from KRLA/data - a backup is stored at /archive/parchman\_lab/rawdata\_to\_backup/KRLA) :
+6. Check that KRLA.clean.fastq has been created (from cleaning script), then remove the raw data file (from KRLA/data - a backup is stored at /archive/parchman\_lab/rawdata\_to\_backup/KRLA) :
 
 	```sh
 	ls
 	rm -rf KRLA_S1_L001_R1_001.fastq &
 	```
 	
-5. Count the reads **after** cleaning with:
+7. Count the reads **after** cleaning with:
 
 	```sh
 	nohup grep -c "^@" KRLA.clean.fastq > KRLA_clean_reads.txt &
@@ -349,7 +352,9 @@ There is no reason to use 100 identical sequences for the denovo clustering task
 
 
 
-## II. Mapping reads from all individuals to reference, using `bwa`
+# 3. Mapping reads from all individuals to reference using `bwa`
+
+### 3A. DIRECTORY & FILE PREP
 
 ## III. Using bcftools to build cigar formatted mpileup
 
