@@ -7,7 +7,8 @@ Methods described in this document are meant to be thorough and allow for user c
 - [Ddocent](http://www.ddocent.com//)
 - [ipyrad](https://ipyrad.readthedocs.io/en/master/)
 
-See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](./papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
+
+See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](/papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
 
 # Focal Species (*Krascheninnikovia lanata*) Background & Sampling
 <img src="images/KRLAplant.jpg" width="310"> &emsp; &emsp;
@@ -201,7 +202,7 @@ PERLT='while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n"
 *Insert more explanation here*
 
 ```sh
-cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$AWK2' | perl -e '$PERLT' > {}.uniq.seqs" &> /dev/null &
+cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$AWK2' | perl -e '$PERLT' > {}.uniq.seqs" &
 ```
 
 **Check progress**  
@@ -216,6 +217,8 @@ ls *.uniq.seqs -1 | wc -l
 
 **Select a subset of all unique sequences to improve...** 
 
+Seth is still bad at redirecting output correctly under nohup
+
 ```sh
 bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &
 ```
@@ -224,20 +227,12 @@ bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &
 where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.
 
 
-For reference here and to see what steps are being done to generate this subset of sequences, selectContigs.sh is copied below:    
-
 ```sh
-#!/bin/bash
-
-parallel --no-notice -j 16 mawk -v x=$1 \''$1 >= x'\' ::: *.uniq.seqs \
-    | cut -f2 \
-    | perl -e 'while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}' \
-    | mawk -v x=$2 '$1 >= x' \
-    | cut -f2 \
-    | mawk '{c= c + 1; print ">Contig_" c "\n" $1}' \
-    | sed -e 's/NNNNNNNNNN/\t/g' \
-    | cut -f1
+nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs2 &
 ```
+
+
+where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.   
 
 The above will produce files that look like knin.seqs... explain.
 
