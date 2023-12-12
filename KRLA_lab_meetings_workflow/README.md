@@ -33,7 +33,7 @@ We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023.
 Will add to as needed. Just getting a basic structure started here.
 
 ```mermaid
-flowchart TD
+flowchart TD;
     A(personal directory <br>
     /working/romero/) --> B(species folder <br> 
     /romero/KRLA)
