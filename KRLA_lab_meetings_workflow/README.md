@@ -8,7 +8,7 @@ Methods described in this document are meant to be thorough and allow for user c
 - [ipyrad](https://ipyrad.readthedocs.io/en/master/)
 
 
-See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](/papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
+See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](./papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
 
 # Focal Species (*Krascheninnikovia lanata*) Background & Sampling
 <img src="images/KRLAplant.jpg" width="310"> &emsp; &emsp;
