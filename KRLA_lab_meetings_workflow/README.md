@@ -1,58 +1,52 @@
-# Workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, or whatever else people want to call it)
+# Genotyping By Sequencing (GBS) - An Example Study
+### Workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, or whatever else people want to call it)
 
-### Canned software packages or computational workflows for handling this type of data:
+Methods described in this document are meant to be thorough and allow for user control at each step of the bioinformatic process. However, 'simpler' alternatives exist in the form of canned software packages and other streamlined computational workflows. These methods all rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. This is highly problematic. Biggest cost of using these types of methods is throwing away much if not most of the data. Examples of such software/workflows include:
 
-These methods all rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. We will get into this later, but this is a major problem. Biggest cost of using these types of methods is throwing away much if not most of the data.
-
-- [stack](FIX)
+- [Stacks](https://catchenlab.life.illinois.edu/stacks/)
 - [Ddocent](http://www.ddocent.com//)
-- [ipyrad](FIX)
+- [ipyrad](https://ipyrad.readthedocs.io/en/master/)
 
 
-See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and Buerkle and Gompert 2013 for articulate thoughts about this.
+See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](/papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
 
-# Organization and Workflow for *Krascheninnikovia lanata* GBS 
+# Focal Species (*Krascheninnikovia lanata*) Background & Sampling
 <img src="images/KRLAplant.jpg" width="310"> &emsp; &emsp;
 <img src="images/KRLAmap.png" width="401">
 
-# Range-wide landscape genomics: sample organization and GBS workflow 
+&emsp; *Krascheninnikovia lanata* (winterfat) is a perennial shrub with a broad north/south distributional range spanning western Canada, U.S. and Mexico. The species is exclusive to North America and its current range is likely the result of southward expansion following two distinct migration events from eastern Mongolian lineages ~ 1.8 - 0.5 Mya.\
+&emsp; The species is a halophyte (salt-tolerant) and is one of the only species outside of the *Atriplex* complex to co-dominate the salt desert shrublands of the Great Basin. It is a highly nutritious source of forage which is notable given that it is prone to replacement by the toxic exotic *Halogeton glomeratus* within disturbed habitats. The common name 'winterfat' is indicative of the persistence of green leaves throughout the winter season and late fall phenology.\
+&emsp; Population sampling was a combined effort throughout 2021 - 2022 with Cathy Silliman doing collections for most of the populations in the west, central, and north Great Basin and Seth Romero gathering collections from the eastern Great Basin and Mojave. Anecdotally, many of the individuals in the north, central and eastern Great Basin were smaller in stature but part of broad near-monocultures that created consistent cover across broad areas. By contrast, many of the populations in the Mojave and southwest Great Basin were large individuals that occured in small islands or as sub-dominants with only a handful of individuals living in close proximity. The populations **DT** and **CL**, in particular, had nearly every individual sampled that could found at those locations.
 
-## Sample organization
+### Sample organization
 - Full information on DNAs for each individual sampled across natural distribution can be found in `XXXXXXXXXX`. This file also has the updated plate maps with specified IDs.
 
 - **NOTE** DNA was extracted in December 2022 at AG Biotech. Plates in lab freezer need to be tranported to -80.
 
-## Notes on library preparation
+### Notes on library preparation
 
-### 12/19-12/22: R/L and PCR for plates 1-6. Master mix in `KRLA_RFseq_mastermixcockatils.xlsx`.
-
-
-## Data analysis: contaminant cleaning, barcode parsing, data storage, directory organization, and initial analyses.
-
+12/19-12/22: R/L and PCR for plates 1-6. Master mix in `KRLA_RFseq_mastermixcockatils.xlsx`.\
 We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023. 
 
-### This file contains code and notes for
+# GBS Workflow Table of Contents
 
 1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)\
     a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)\
     b. [Parsing barcodes](#1b-barcode-parsing)\
-    c. [Splitting fastqs](#1c-splitting-fastqs)
+    c. [Splitting fastqs](#1c-splitting-fastqs)\
 2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)\
     a. [Directory & file prep](#2a-directory--file-prep)\
     b. [Generating unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)\
-    c. [Sequence subsetting for alignment]
-
-3) MAPPING  
-
-4) CALLING VARIANTS   
-de novo assembly
-5) FILTERING  
-reference based assembly
-6) GENOTYPE PROBABILITIES
+    c. [Sequence subsetting for alignment](#2c-subset-sequences-for-contig-alignment-and-assembly)\
+3) [READ MAPPING](#3-mapping-reads-from-all-individuals-to-reference-using-bwa)\
+    a. [Directory & file prep]()\
+4) [CALLING VARIANTS]()\
+5) [FILTERING]()\
+6) [GENOTYPE PROBABILITIES]()\
 
 # 1. Initial Sequence Processing
 
-## 1a. Cleaning contaminants
+### 1A. CLEANING CONTAMINANTS
 
 Being executed on ponderosa using tapioca pipeline. Commands in two bash scripts (cleaning_bash_CADE.sh and cleaning_bash_SEGI.sh), executed as below (6/9/23). This was for one S2 NovaSeq lanes generated in late December 2022.
 
@@ -83,28 +77,27 @@ bash cleaning_bash_KRLA.sh &
 
 After .clean.fastq has been produced, rm raw data:
 
-    $ rm -rf KRLA_S1_L001_R1_001.fastq &
-   
+```sh
+rm -rf KRLA_S1_L001_R1_001.fastq &
+```   
 
 Raw data will stay stored in: /archive/parchman_lab/rawdata_to_backup/FRLA/
 
 Number of reads **after** cleaning:
 
-    $ nohup grep -c "^@" KRLA.clean.fastq > FRLA1_clean_reads.txt &
-    ## reads after cleaning:
+```sh
+nohup grep -c "^@" KRLA.clean.fastq > FRLA1_clean_reads.txt &
+``` 
 
-
-## 1b. Barcode parsing:
-
+### 1B. BARCODE PARSING
 
 Be sure to deactivate conda environment before running the below steps. Barcode keyfiles are `/working/parchman/KRLA/KRLA_barcode_key.csv` 
 
 Parsing KRLA library:
 
-    $ nohup perl parse_barcodes768.pl KRLA_barcode_key.csv KRLA.clean.fastq A00 &>/dev/null &
-
-
-
+```sh
+nohup perl parse_barcodes768.pl KRLA_barcode_key.csv KRLA.clean.fastq A00 &>/dev/null &
+```
 
 `NOTE`: the A00 object is the code that identifies the sequencer (first three characters after the @ in the fastq identifier).
 
@@ -114,54 +107,43 @@ Parsing KRLA library:
     Number of seqs with potential MSE adapter in seq: 321195
     Seqs that were too short after removing MSE and beyond: 428
 
-## 1c. splitting fastqs
+### 1C. SPLITTING FASTQS
 
 
 For KRLA, doing this in `/working/parchman/KRLA/splitfastqs`
 
-Make ids file
+**Make `ids` file**
 
-    $ cut -f 3 -d "," KRLA_barcode_key.csv | grep "_" > KRLA_ids_noheader.txt
+```sh
+cut -f 3 -d "," KRLA_barcode_key.csv | grep "_" > KRLA_ids_noheader.txt
+```
 
+**Split fastqs by individual**
 
-Split fastqs by individual
+```sh
+nohup perl splitFastq_universal_regex.pl KRLA_ids_noheader.txt parsed_KRLA.clean.fastq &>/dev/null &
+```
 
-    $ nohup perl splitFastq_universal_regex.pl KRLA_ids_noheader.txt parsed_KRLA.clean.fastq &>/dev/null &
-
-
-'gzip' all .fastq files
-
-gzipped the parsed*fastq files for now, but delete once patterns and qc are verified.
-
-    $ nohup gzip *fastq &>/dev/null &
+**gzip files (takes time)**  
+*Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default). The following steps (2a. - 2c.) depend on these files being gzipped. Compressing before copying to your working directory will also drastically speed up the file transfer time.*
     
+```sh
+nohup gzip *fastq &>/dev/null &
+```
 
-# Workflow for assembly and variant calling for GBS data
-Here we will organize thoughts, details, justification, and code for all steps, from raw data to final filtered genotype matrices for population genetic analyes
-
-# 2. Denovo assembly to generate a consensus reference for mapping reads prior to genotyping.
+# 2. Denovo assembly to generate a consensus reference for mapping reads prior to genotyping
 
 - when to use reference based
 - when to not use reference based and why
 - how to run reference based assembly
 - how to run denovo assembly to generate artificial reference
 
-### choices for clustering/assembly methods for this type of step
+#### Choices for clustering/assembly methods for this type of step:
 - [LaCava et al. 2020](./papers/LaCava_etal_2020.pdf)
 
+### 2A. DIRECTORY & FILE PREP
 
-### Building a consensus reference of regions sequenced with the GBS design using `CDhit`
 
-We are exactly following linux commands and pipelines from the workflow for dDocent (Puritz et al. 2014). See also link to [Ddocent](http://www.ddocent.com//)
-
-### 2a. Directory & file prep
-
-**gzip files (takes time)**  
-*Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default). This step is only necessary if fastq files are not compressed when you start. `dDocent` reads `.gz` compressed files.*
-    
-```sh
-nohup gzip *fastq &>/dev/null &
-```
 
 **Create directories for individual fastq files and assembly files**  
 *Link to overall directory structure here for reference*
@@ -185,8 +167,10 @@ mkdir assembly
 cd fastq/
 ```
 
+*`NOTE:` the directory in the following may need to be changed depending on where steps 1a. - 1c. are being done.* 
+
 ```sh
-nohup cp /ENTERDIRECTORYWHEREWHEREWEWANTTOPROCESSCONTAMINANTSHERE/*.fastq.gz . &> /dev/null &
+nohup cp /working/parchman/KRLA/splitfastqs/*.fastq.gz . &> /dev/null &
 ```
 
 **Check  that correct number of individual fastq files have been moved**
@@ -197,9 +181,9 @@ ls *.fastq.gz -1 | wc -l
 
 *Total KRLA individuals: **497***
 
-#### The substeps below serve to retain only unique sequences so that the computational scope and energy of the denovo clustering task are reduced. In otherwords, there is no reason to use 100 identical sequences, but such use would increase compute time and memory usage.
+### 2B. GENERATE 'UNIQUE' SEQUENCE FILES FOR EACH INDIVIDUAL
 
-### 2b. Generate 'unique' sequence files for each individual
+This is the first of two steps aimed at improving the efficiency of running the `CD-HIT` alignment algorithm. By ignoring sequence repeats, we reduce the total number of sequences compared for alignment to <1% (in most datasets). `CD-HIT` could be run on all sequences across all individuals but it would take considerably longer and no information would be gained.
 
 **Make list of individual IDs from all fastq files**
     
@@ -228,17 +212,13 @@ cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$
 ```sh
 ls *.uniq.seqs | sed -e 's/.fastq.gz//g' > nameList
 ```
-### 2c. 
 
+### 2C. SUBSET SEQUENCES FOR CONTIG ALIGNMENT AND ASSEMBLY
 
-### Notes here about 'optimizing' parameters in the assembly generation process...
-Seth can add a description of what the 'refOpt.sh' attempts to do (i.e. what Trevor does on pronghorn). Because that method is testing parameter effects across a subset of individuals, the inference is kind of janky. Another possibility is to explore effect of parameter variation on alternate assemblies using all individuals. Processing time (day-ish) and disk space is honestly not that big relative to this whole pipeline and pretty feasible on ponderosa (with potential to improve efficiency still). Might be worth doing in this case just to get a more in-depth understanding of things even if we decide it's not worth it on future projects...
-
-#### 4. (Required regardless of any 'optimization') select sequences according to a minimum number of occurrences within a given individual (k) and the minimum number of individuals the sequence occurs in (i)
-Simpler to do this step as a script that just pipes the steps through and avoids generating unnecessary intermediate files. Run time is roughly 2-10 minutes. Current version of this script is at *ponderosa:/working/romero/scripts/selectContigs.sh*. As currently written, run **within the directory that has .uniq.seqs** files as
+**Select a subset of all unique sequences to improve 
 
 ```SH
-nohup bash /working/romero/scripts/selectContigs.sh 4 2 > k4.i2.seqs &> /dev/null &
+nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &> /dev/null &
 ```
 
 
@@ -263,9 +243,6 @@ parallel --no-notice -j 16 mawk -v x=$1 \''$1 >= x'\' ::: *.uniq.seqs \
 The above will produce files that look like knin.seqs... explain.
 
 **SETH** Add a description of the files in the 'assembly' directory we talked about, how or why you would choose one for 
-
-
-#### 5. For ponderosa, load the cd-hit module and run cd-hit-est for contig clustering.
 
 ```sh   
 module load cd-hit/4.6
@@ -303,7 +280,9 @@ grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyCo
 
 *Will add some code and/or images of plots for these comparisons later*
 
-## II. Mapping reads from all individuals to reference, using `bwa`
+# 3. Mapping reads from all individuals to reference using `bwa`
+
+### 3A. DIRECTORY & FILE PREP
 
 ## III. Using bcftools to build cigar formatted mpileup
 
