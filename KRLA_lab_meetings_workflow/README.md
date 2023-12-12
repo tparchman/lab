@@ -214,10 +214,10 @@ ls *.uniq.seqs -1 | wc -l
 
 ### 2C. SUBSET SEQUENCES FOR CONTIG ALIGNMENT AND ASSEMBLY
 
-**Select a subset of all unique sequences to improve...** 
+**Select a subset of all unique sequences to improve** 
 
-```SH
-nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &> /dev/null &
+```sh
+bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &
 ```
 
 
