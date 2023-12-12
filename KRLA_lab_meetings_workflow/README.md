@@ -33,16 +33,16 @@ We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023.
 1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)\
     a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)\
     b. [Parsing barcodes](#1b-barcode-parsing)\
-    c. [Splitting fastqs](#1c-splitting-fastqs)\
+    c. [Splitting fastqs](#1c-splitting-fastqs)
 2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)\
     a. [Directory & file prep](#2a-directory--file-prep)\
     b. [Generating unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)\
-    c. [Sequence subsetting for alignment](#2c-subset-sequences-for-contig-alignment-and-assembly)\
+    c. [Sequence subsetting for alignment](#2c-subset-sequences-for-contig-alignment-and-assembly)
 3) [READ MAPPING](#3-mapping-reads-from-all-individuals-to-reference-using-bwa)\
-    a. [Directory & file prep]()\
-4) [CALLING VARIANTS]()\
-5) [FILTERING]()\
-6) [GENOTYPE PROBABILITIES]()\
+    a. [Directory & file prep]()
+4) [CALLING VARIANTS]()
+5) [FILTERING]()
+6) [GENOTYPE PROBABILITIES]()
 
 # 1. Initial Sequence Processing
 
