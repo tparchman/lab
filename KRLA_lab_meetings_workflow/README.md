@@ -3,6 +3,7 @@
 This document presents our workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, etc). Several canned software packages or computational workflows exist for handling this type of data. These methods rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. The biggest cost of using these methods is throwing away much, if not most, of the data.
 
 The methods described in this document are meant to be thorough and allow for user control at each step of the bioinformatic process. However, 'simpler' alternatives exist in the form of canned software packages and other streamlined computational workflows. These methods all rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. This is highly problematic. Biggest cost of using these types of methods is throwing away much if not most of the data. Examples of such software/workflows include:
+
 * [Stacks](http://catchenlab.life.illinois.edu/stacks/)
 * [Ddocent](http://www.ddocent.com//)
 * [ipyrad](https://ipyrad.readthedocs.io/en/master/)
@@ -38,8 +39,10 @@ See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompe
 <img src="images/KRLAplant.jpg" width="310"> &emsp; &emsp;
 <img src="images/KRLAmap.png" width="401">
 
-&emsp; *Krascheninnikovia lanata* (winterfat) is a perennial shrub with a broad north/south distributional range spanning western Canada, U.S. and Mexico. The species is exclusive to North America and its current range is likely the result of southward expansion following two distinct migration events from eastern Mongolian lineages ~ 1.8 - 0.5 Mya.\
-&emsp; The species is a halophyte (salt-tolerant) and is one of the only species outside of the *Atriplex* complex to co-dominate the salt desert shrublands of the Great Basin. It is a highly nutritious source of forage which is notable given that it is prone to replacement by the toxic exotic *Halogeton glomeratus* within disturbed habitats. The common name 'winterfat' is indicative of the persistence of green leaves throughout the winter season and late fall phenology.\
+&emsp; *Krascheninnikovia lanata* (winterfat) is a perennial shrub with a broad north/south distributional range spanning western Canada, U.S. and Mexico. The species is exclusive to North America and its current range is likely the result of southward expansion following two distinct migration events from eastern Mongolian lineages ~ 1.8 - 0.5 Mya.
+
+&emsp; The species is a halophyte (salt-tolerant) and is one of the only species outside of the *Atriplex* complex to co-dominate the salt desert shrublands of the Great Basin. It is a highly nutritious source of forage which is notable given that it is prone to replacement by the toxic exotic *Halogeton glomeratus* within disturbed habitats. The common name 'winterfat' is indicative of the persistence of green leaves throughout the winter season and late fall phenology.
+
 &emsp; Population sampling was a combined effort throughout 2021 - 2022 with Cathy Silliman doing collections for most of the populations in the west, central, and north Great Basin and Seth Romero gathering collections from the eastern Great Basin and Mojave. Anecdotally, many of the individuals in the north, central and eastern Great Basin were smaller in stature but part of broad near-monocultures that created consistent cover across broad areas. By contrast, many of the populations in the Mojave and southwest Great Basin were large individuals that occured in small islands or as sub-dominants with only a handful of individuals living in close proximity. The populations **DT** and **CL**, in particular, had nearly every individual sampled that could found at those locations.
 
 ## File structure
@@ -278,22 +281,22 @@ There is no reason to use 100 identical sequences for the denovo clustering task
 3. Check that you have a uniq.seq file for each fastq.gz file:
 
 	```sh
-	ls *.uniq.seqs | sed -e 's/.fastq.gz//g' > nameList
+	ls *.uniq.seqs -1 | wc -l
 	```
 	
 ### Assemble from sequence sets
 	
-4. Select a value of i (number of individuals a sequence occurs in) and k (number of times a sequence appears in an individual) to filter your .uniq.seqs files. This will speed up the assembly step.
+1. Select a value of i (number of individuals a sequence occurs in) and k (number of times a sequence appears in an individual) to filter your .uniq.seqs files. This will speed up the assembly step.
 
 	* Values are usually between 2 and 10
 	* See note below on how to iteratively repeat steps 4-6 with different parameter values
 
 
-5. Generate the collection of sequences that meet your i and k criteria by running the `selectContigs.sh` script. For example when k=4 and i=2:
+2. Generate the collection of sequences that meet your i and k criteria by running the `selectContigs.sh` script. For example when k=4 and i=2:
 
 	```sh
 	cp /working/romero/scripts/selectContigs.sh .
-	nohup bash selectContigs.sh 4 2 > k4.i2.seqs &> /dev/null &
+	nohup bash selectContigs.sh 4 2 > k4.i2.seqs &
 	```
 	
 	* The file k4.12.seqs will contain only sequences that meet these criteria
@@ -312,7 +315,7 @@ There is no reason to use 100 identical sequences for the denovo clustering task
     	| cut -f1
 		```
 
-6. Use [CD-HIT](https://github.com/weizhongli/cdhit/wiki/3.-User's-Guide#user-content-CDHITEST) to create a denovo assembly from these reads, at a chosen clustering similarity threshold (c).
+3. Use [CD-HIT](https://github.com/weizhongli/cdhit/wiki/3.-User's-Guide#user-content-CDHITEST) to create a denovo assembly from these reads, at a chosen clustering similarity threshold (c).
 	
 	```sh
 	module load cd-hit/4.6
