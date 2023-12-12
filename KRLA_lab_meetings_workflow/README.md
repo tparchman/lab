@@ -33,16 +33,16 @@ We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023.
 1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)\
     a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)\
     b. [Parsing barcodes](#1b-barcode-parsing)\
-    c. [Splitting fastqs](#1c-splitting-fastqs)\
+    c. [Splitting fastqs](#1c-splitting-fastqs)
 2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)\
     a. [Directory & file prep](#2a-directory--file-prep)\
     b. [Generating unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)\
-    c. [Sequence subsetting for alignment](#2c-subset-sequences-for-contig-alignment-and-assembly)\
+    c. [Sequence subsetting for alignment](#2c-subset-sequences-for-contig-alignment-and-assembly)
 3) [READ MAPPING](#3-mapping-reads-from-all-individuals-to-reference-using-bwa)\
-    a. [Directory & file prep]()\
-4) [CALLING VARIANTS]()\
-5) [FILTERING]()\
-6) [GENOTYPE PROBABILITIES]()\
+    a. [Directory & file prep]()
+4) [CALLING VARIANTS]()
+5) [FILTERING]()
+6) [GENOTYPE PROBABILITIES]()
 
 # 1. Initial Sequence Processing
 
@@ -173,13 +173,12 @@ cd fastq/
 nohup cp /working/parchman/KRLA/splitfastqs/*.fastq.gz . &> /dev/null &
 ```
 
-**Check  that correct number of individual fastq files have been moved**
+**Check  that correct number of individual fastq files have been moved**\
+*Total KRLA individuals: **497***
 
 ```sh
 ls *.fastq.gz -1 | wc -l
 ```
-
-*Total KRLA individuals: **497***
 
 ### 2B. GENERATE 'UNIQUE' SEQUENCE FILES FOR EACH INDIVIDUAL
 
@@ -207,15 +206,16 @@ cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$
 ```
 
 **Check progress**  
-*Should eventually have same number of uniq.seqs files as fasta.gz files*
+*Should eventually have same number of uniq.seqs files as fasta.gz files*\
+*for KRLA: 497*
 
 ```sh
-ls *.uniq.seqs | sed -e 's/.fastq.gz//g' > nameList
+ls *.uniq.seqs -1 | wc -l
 ```
 
 ### 2C. SUBSET SEQUENCES FOR CONTIG ALIGNMENT AND ASSEMBLY
 
-**Select a subset of all unique sequences to improve 
+**Select a subset of all unique sequences to improve...** 
 
 ```SH
 nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &> /dev/null &
