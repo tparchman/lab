@@ -28,6 +28,20 @@ See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and [Buerkle and Gomper
 12/19-12/22: R/L and PCR for plates 1-6. Master mix in `KRLA_RFseq_mastermixcockatils.xlsx`.\
 We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023. 
 
+# Overall Directory Structure
+
+Will add to as needed. Just getting a basic structure started here.
+
+```mermaid
+flowchart TD
+    A(personal directory <br>
+    /working/romero/) --> B(species folder <br> 
+    /romero/KRLA)
+    B --> C(assembly)
+    B --> D(fastq)
+    B --> E(bwa)
+```
+
 # GBS Workflow Table of Contents
 
 1) [INITIAL SEQUENCE PROCESSING](#1-initial-sequence-processing)\
@@ -219,11 +233,6 @@ ls *.uniq.seqs -1 | wc -l
 
 Seth is still bad at redirecting output correctly under nohup
 
-```sh
-bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &
-```
-
-
 where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.
 
 
@@ -264,15 +273,6 @@ Note that for a given `<outputFile>` name, **2** files are generated - 1 with no
 
 For reference, a cd-hit of c=0.9 typically takes 5-10 minutes over 32 CPUs, with lower c-values being slower, and higher being faster...
 
-*Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...*
-
-If generating multiple assemblies, we can summarize the information into a file (here called *assemblyComparison*) via
-
-```sh
-grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
-```
-
-*Will add some code and/or images of plots for these comparisons later*
 
 # 3. Mapping reads from all individuals to reference using `bwa`
 
@@ -523,6 +523,16 @@ After filtering, kept 598 out of 598 Individuals, kept 19384 out of a possible 1
 
 ### Appendix 1: Reference of useful commands (as far as what Parchman lab people like)
 Just an unorganized list for now, will clean up later...
+
+*Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...*
+
+If generating multiple assemblies, we can summarize the information into a file (here called *assemblyComparison*) via
+
+```sh
+grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
+```
+
+*Will add some code and/or images of plots for these comparisons later*
 
 + `parallel` - easiest way to run jobs in parallel across CPUs. See [GNU Parallel tutorial](https://www.gnu.org/software/parallel/parallel_tutorial.html)
     + `-j` - max jobs to run in parallel
