@@ -220,6 +220,14 @@ ls *.uniq.seqs -1 | wc -l
 Seth is still bad at redirecting output correctly under nohup
 
 ```sh
+bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &
+```
+
+
+where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.
+
+
+```sh
 nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs2 &
 ```
 
