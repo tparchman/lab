@@ -215,7 +215,7 @@ ls *.uniq.seqs -1 | wc -l
 
 ### 2C. SUBSET SEQUENCES FOR CONTIG ALIGNMENT AND ASSEMBLY
 
-**Select a subset of all unique sequences to improve** 
+**Select a subset of all unique sequences to improve...** 
 
 Seth is still bad at redirecting output correctly under nohup
 
