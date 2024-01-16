@@ -40,16 +40,18 @@ Will add to as needed. Just getting a basic structure started here.
 
 ```mermaid
 flowchart TD;
-    A(personal directory <br> /working/romero/) --> B(species folder <br> /romero/KRLA)
+    A(personal directory <br> /working/romero/) --> B(species folder <br> /romero/KRLA/)
     B --> C(assembly)
     B --> D(bwa)
     B --> E(fastq)
     B --> F(scripts)
     E --> G(fastq files <br> e.g. *.fastq.gz)
-    C --> H(alt_assemblies (optional))
-    H --> I(seq subset files <br> e.g. k4.i2.seqs)
-    H --> J(assembly files <br> e.g. rf.4.2.92)
-    D --> K(mapped/sorted reads <br> + index files <br> e.g. *.bam and *.bam.bai)
+    C --> H(de novo assembly <br> e.g. rf.*)
+    C --> I(indexed assembly files <br> e.g. *.amb, *.ann, *.bwt, *.pac, *.sa)
+    C --> J(alt_assemblies <br> OPTIONAL)
+    J --> K(seq subset files <br> e.g. k4.i2.seqs)
+    J --> L(assembly files <br> e.g. rf.4.2.92)
+    D --> M(mapped/sorted reads <br> + index files <br> e.g. *.bam and *.bam.bai)
 ```
 
 # GBS Workflow Table of Contents
