@@ -44,12 +44,12 @@ flowchart TD;
     B --> C(assembly)
     B --> D(bwa)
     B --> E(fastq)
-	B --> F(scripts)
+    B --> F(scripts)
     E --> G(fastq files <br> e.g. *.fastq.gz)
-	C --> H(alt_assemblies (optional))
+    C --> H(alt_assemblies (optional))
     H --> I(seq subset files <br> e.g. k4.i2.seqs)
     H --> J(assembly files <br> e.g. rf.4.2.92)
-	D --> K(mapped/sorted reads <br> + index files <br> e.g. *.bam and *.bam.bai)
+    D --> K(mapped/sorted reads <br> + index files <br> e.g. *.bam and *.bam.bai)
 ```
 
 # GBS Workflow Table of Contents
