@@ -1,22 +1,25 @@
 # Genotyping By Sequencing (GBS) - An Example Study
-### Workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, or whatever else people want to call it)
 
-Methods described in this document are meant to be thorough and allow for user control at each step of the bioinformatic process. However, 'simpler' alternatives exist in the form of canned software packages and other streamlined computational workflows. These methods all rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. This is highly problematic. Biggest cost of using these types of methods is throwing away much if not most of the data. Examples of such software/workflows include:
+This document presents our workflow and rationale for genotype inference from high throughput sequencing of reduced representation libraries (GBS, RADseq, ddRADseq, etc). Several canned software packages or computational workflows exist for handling this type of data. These methods rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. The biggest cost of using these methods is throwing away much, if not most, of the data.
 
-- [Stacks](https://catchenlab.life.illinois.edu/stacks/)
-- [Ddocent](http://www.ddocent.com//)
-- [ipyrad](https://ipyrad.readthedocs.io/en/master/)
+The methods described in this document are meant to be thorough and allow for user control at each step of the bioinformatic process. However, 'simpler' alternatives exist in the form of canned software packages and other streamlined computational workflows. These methods all rely on set thresholds for sequencing coverage depth per locus to call hard genotypes. This is highly problematic. Biggest cost of using these types of methods is throwing away much if not most of the data. Examples of such software/workflows include:
 
+* [Stacks](http://catchenlab.life.illinois.edu/stacks/)
+* [Ddocent](http://www.ddocent.com//)
+* [ipyrad](https://ipyrad.readthedocs.io/en/master/)
 
-See [Nielsen et al. 2011](/papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](/papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
+See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompert 2013](./papers/Buerkle_Gompert_2013.pdf) for articulate thoughts about this.
 
 # Focal Species (*Krascheninnikovia lanata*) Background & Sampling
 <img src="images/KRLAplant.jpg" width="310"> &emsp; &emsp;
 <img src="images/KRLAmap.png" width="401">
 
-&emsp; *Krascheninnikovia lanata* (winterfat) is a perennial shrub with a broad north/south distributional range spanning western Canada, U.S. and Mexico. The species is exclusive to North America and its current range is likely the result of southward expansion following two distinct migration events from eastern Mongolian lineages ~ 1.8 - 0.5 Mya.\
-&emsp; The species is a halophyte (salt-tolerant) and is one of the only species outside of the *Atriplex* complex to co-dominate the salt desert shrublands of the Great Basin. It is a highly nutritious source of forage which is notable given that it is prone to replacement by the toxic exotic *Halogeton glomeratus* within disturbed habitats. The common name 'winterfat' is indicative of the persistence of green leaves throughout the winter season and late fall phenology.\
-&emsp; Population sampling was a combined effort throughout 2021 - 2022 with Cathy Silliman doing collections for most of the populations in the west, central, and north Great Basin and Seth Romero gathering collections from the eastern Great Basin and Mojave. Anecdotally, many of the individuals in the north, central and eastern Great Basin were smaller in stature but part of broad near-monocultures that created consistent cover across broad areas. By contrast, many of the populations in the Mojave and southwest Great Basin were large individuals that occured in small islands or as sub-dominants with only a handful of individuals living in close proximity. The populations **DT** and **CL**, in particular, had nearly every individual sampled that could found at those locations.
+*Krascheninnikovia lanata* (winterfat) is a perennial shrub with a broad north/south distributional range spanning western Canada, U.S. and Mexico. The species is exclusive to North America and its current range is likely the result of southward expansion following two distinct migration events from eastern Mongolian lineages ~ 1.8 - 0.5 Mya.\
+
+
+The species is a halophyte (salt-tolerant) and is one of the only species outside of the *Atriplex* complex to co-dominate the salt desert shrublands of the Great Basin. It is a highly nutritious source of forage which is notable given that it is prone to replacement by the toxic exotic *Halogeton glomeratus* within disturbed habitats. The common name 'winterfat' is indicative of the persistence of green leaves throughout the winter season and late fall phenology.\
+
+Population sampling was a combined effort throughout 2021 - 2022 with Cathy Silliman doing collections for most of the populations in the west, central, and north Great Basin and Seth Romero gathering collections from the eastern Great Basin and Mojave. Anecdotally, many of the individuals in the north, central and eastern Great Basin were smaller in stature but part of broad near-monocultures that created consistent cover across broad areas. By contrast, many of the populations in the Mojave and southwest Great Basin were large individuals that occured in small islands or as sub-dominants with only a handful of individuals living in close proximity. The populations **DT** and **CL**, in particular, had nearly every individual sampled that could found at those locations.
 
 ### Sample organization
 - Full information on DNAs for each individual sampled across natural distribution can be found in `XXXXXXXXXX`. This file also has the updated plate maps with specified IDs.
@@ -30,17 +33,23 @@ We generated 1 lane of S2 chemistry NovaSeq data at UTGSAF in March of 2023.
 
 # Overall Directory Structure
 
+* Create a project folder (wherever you want it) called KRLA with `mkdir KRLA`
+* Subfolders will be created throughout the analysis
+
 Will add to as needed. Just getting a basic structure started here.
 
 ```mermaid
 flowchart TD;
     A(personal directory <br> /working/romero/) --> B(species folder <br> /romero/KRLA)
     B --> C(assembly)
-    B --> D(fastq)
-    B --> E(bwa)
-    D --> F(fastq files <br> *.fastq.gz)
-    C --> G(seq subset files <br> e.g. k4.i2.seqs)
-    C --> H(assembly files <br> e.g. rf.4.2.92) 
+    B --> D(bwa)
+    B --> E(fastq)
+	B --> F(scripts)
+    E --> G(fastq files <br> e.g. *.fastq.gz)
+	C --> H(alt_assemblies (optional))
+    H --> I(seq subset files <br> e.g. k4.i2.seqs)
+    H --> J(assembly files <br> e.g. rf.4.2.92)
+	D --> K(mapped/sorted reads <br> + index files <br> e.g. *.bam and *.bam.bai)
 ```
 
 # GBS Workflow Table of Contents
@@ -49,7 +58,7 @@ flowchart TD;
     a. [Contaminant cleaning using tapioca](#1a-cleaning-contaminants)\
     b. [Parsing barcodes](#1b-barcode-parsing)\
     c. [Splitting fastqs](#1c-splitting-fastqs)
-2) [DENOVO REFERENCE ASSEMBLY](#2-denovo-assembly-to-generate-a-consensus-reference-for-mapping-reads-prior-to-genotyping)\
+2) [DENOVO ASSEMBLY](#denovo-assembly)\
     a. [Directory & file prep](#2a-directory--file-prep)\
     b. [Generating unique sequence files](#2b-generate-unique-sequence-files-for-each-individual)\
     c. [Sequence subsetting for alignment](#2c-subset-sequences-for-contig-alignment-and-assembly)
@@ -59,223 +68,316 @@ flowchart TD;
 5) [FILTERING]()
 6) [GENOTYPE PROBABILITIES]()
 
-# 1. Initial Sequence Processing
+**... add more as we work**
 
-### 1A. CLEANING CONTAMINANTS
+### To do:
 
-Being executed on ponderosa using tapioca pipeline. Commands in two bash scripts (cleaning_bash_CADE.sh and cleaning_bash_SEGI.sh), executed as below (6/9/23). This was for one S2 NovaSeq lanes generated in late December 2022.
-
-Decompress fastq file:
-
-```sh
-gunzip KRLA_S1_L001_R1_001.fastq.gz
-```
-
-Determine number of reads **before** cleaning:
-
-```sh
-nohup grep -c "^@" KRLA_S1_L001_R1_001.fastq > KRLA_number_of_rawreads.txt &
-```
-**RAW READS FOR KRLA:**  
-
-To run cleaning_bash* tapioca wrapper, exit conda environment, load modules, and run bash scripts.
-
-```sh
-module load fqutils/0.4.1
-```
-```sh
-module load bowtie2/2.2.5
-```
-```sh   
-bash cleaning_bash_KRLA.sh &
-```
-
-After .clean.fastq has been produced, rm raw data:
-
-```sh
-rm -rf KRLA_S1_L001_R1_001.fastq &
-```   
-
-Raw data will stay stored in: /archive/parchman_lab/rawdata_to_backup/FRLA/
-
-Number of reads **after** cleaning:
-
-```sh
-nohup grep -c "^@" KRLA.clean.fastq > FRLA1_clean_reads.txt &
-``` 
-
-### 1B. BARCODE PARSING
-
-Be sure to deactivate conda environment before running the below steps. Barcode keyfiles are `/working/parchman/KRLA/KRLA_barcode_key.csv` 
-
-Parsing KRLA library:
-
-```sh
-nohup perl parse_barcodes768.pl KRLA_barcode_key.csv KRLA.clean.fastq A00 &>/dev/null &
-```
-
-`NOTE`: the A00 object is the code that identifies the sequencer (first three characters after the @ in the fastq identifier).
-
-    $ less parsereport_KRLA.clean.fastq
-    Good mids count: 1571963061
-    Bad mids count: 73508410
-    Number of seqs with potential MSE adapter in seq: 321195
-    Seqs that were too short after removing MSE and beyond: 428
-
-### 1C. SPLITTING FASTQS
+* Add explanation of selectContigs.sh parts
+* Add estimated run times for each step
+* Add info about how fastq / assmebly folders are used? 
+* Add full paths for scripts used
 
 
-For KRLA, doing this in `/working/parchman/KRLA/splitfastqs`
-
-**Make `ids` file**
-
-```sh
-cut -f 3 -d "," KRLA_barcode_key.csv | grep "_" > KRLA_ids_noheader.txt
-```
-
-**Split fastqs by individual**
-
-```sh
-nohup perl splitFastq_universal_regex.pl KRLA_ids_noheader.txt parsed_KRLA.clean.fastq &>/dev/null &
-```
-
-**gzip files (takes time)**  
-*Can use `gzip -v` to set compression ratio (accepts values 1-9, 6 is default). The following steps (2a. - 2c.) depend on these files being gzipped. Compressing before copying to your working directory will also drastically speed up the file transfer time.*
-    
-```sh
-nohup gzip *fastq &>/dev/null &
-```
-
-# 2. Denovo assembly to generate a consensus reference for mapping reads prior to genotyping
-
-- when to use reference based
-- when to not use reference based and why
-- how to run reference based assembly
-- how to run denovo assembly to generate artificial reference
-
-#### Choices for clustering/assembly methods for this type of step:
-- [LaCava et al. 2020](./papers/LaCava_etal_2020.pdf)
-
-### 2A. DIRECTORY & FILE PREP
-
-
-
-**Create directories for individual fastq files and assembly files**  
-*Link to overall directory structure here for reference*
-
-```sh
-cd ~/me/KRLA/
-```
-
-```sh
-mkdir fastq
-```
-
-```sh
-mkdir assembly
-```
-
-**Move COMPRESSED fastq files to 'fastq' directory**  
-*Make sure you zip/compress before moving to working directory. It will be much faster.*
-
-```sh
-cd fastq/
-```
-
-*`NOTE:` the directory in the following may need to be changed depending on where steps 1a. - 1c. are being done.* 
-
-```sh
-nohup cp /working/parchman/KRLA/splitfastqs/*.fastq.gz . &> /dev/null &
-```
-
-**Check  that correct number of individual fastq files have been moved**\
-*Total KRLA individuals: **497***
-
-```sh
-ls *.fastq.gz -1 | wc -l
-```
-
-### 2B. GENERATE 'UNIQUE' SEQUENCE FILES FOR EACH INDIVIDUAL
-
-This is the first of two steps aimed at improving the efficiency of running the `CD-HIT` alignment algorithm. By ignoring sequence repeats, we reduce the total number of sequences compared for alignment to <1% (in most datasets). `CD-HIT` could be run on all sequences across all individuals but it would take considerably longer and no information would be gained.
-
-**Make list of individual IDs from all fastq files**
-    
-```sh
-ls *.fastq.gz | sed -e 's/.fastq.gz//g' > nameList
-```
-
-**Set some variables that will be used to process sequences from individual fastqs in next step**
-
-```sh
-AWK1='BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}'
-AWK2='!/>/'
-PERLT='while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}'
-```
-
-**Use variables to scan through fastq files and generate \*.uniq.seqs files for each individual (takes a few minutes)**  
-*Insert more explanation here*
-
-```sh
-cat namelist | parallel --no-notice -j 8 "zcat {}.fastq | mawk '$AWK1' | mawk '$AWK2' | perl -e '$PERLT' > {}.uniq.seqs" &
-```
-
-**Check progress**  
-*Should eventually have same number of uniq.seqs files as fasta.gz files*\
-*for KRLA: 497*
-
-```sh
-ls *.uniq.seqs -1 | wc -l
-```
-
-### 2C. SUBSET SEQUENCES FOR CONTIG ALIGNMENT AND ASSEMBLY
-
-**Select a subset of all unique sequences to improve...** 
-
-Seth is still bad at redirecting output correctly under nohup
-
-where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.
-
+## DNA extraction
 
 ```sh
 nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs &
 ```
 
+* Performed by AG Biotech in 12/2022
+* DNA information with plate maps and IDs can be found at [insert doc path here]
 
-where `<k>` and `<i>` are your chosen parameters. Typically chosen values are somewhere between 2-10. The script called genContigSets.sh will also iteratively generate these files for the combination of k and i parameters across 2,4,6,8, and 10.   
+## Library preparation
 
-The above will produce files that look like knin.seqs... explain.
+* Performed in Parchman Lab in 12/2022
+* [add upstream path]KRLA\_RFseq\_mastermixcockatils.xlsx contains information about reagents used in library prep
+* R/L and PCR for plates 1-6
 
-**SETH** Add a description of the files in the 'assembly' directory we talked about, how or why you would choose one for 
+## Sequencing
 
-```sh   
-module load cd-hit/4.6
-```
+* 1 lane of S2 chemistry NovaSeq data at UTGSAF in 03/2023
+* sequence results in [add upstream path]KRLA\_S1\_L001\_R1\_001.fastq.gz
 
-Run `cd-hit-est` for chosen clustering similarity threshold. Helpful documentation for cd-hit found [here](https://github.com/weizhongli/cdhit/wiki/3.-User's-Guide#user-content-CDHITEST).
-    
-Most basic running of cd-hit looks like 
+# I. Initial Sequence Processing
 
-```sh
-nohup cd-hit-est -i k4.i2.seqs -o rf.4.2.92 -M 0 -T 0 -c 0.92 &>/dev/null &
-```
+## A. Cleaning contaminants
 
-+ `-M ` - maximum memory allowed, default is 800M
-    + if on ponderosa, set to 0 (unlimited), not a limiting factor here, but check with `htop`
-+ `-T` - maximum number of threads (effectively CPUs)
-    + 0 is all available (32 on ponderosa)
-    + if running multiple cd-hits in parallel, something like 16 might make sense? Just so the whole server isn't bogged down. Run times are still reasonable at 16
-+ `-c` - clustering similarity (i.e. how similar sequences have to be to be joined into a contig)
-    + Values to try might be 0.8-0.98
-    + Note as c increases, you generate **more** contigs and the cd-hit process runs **faster**
-+ `<inputFile>` is generated in previous step (something like *k4.i6.seqs*). If generating multiple assemblies for comparison, Seth uses a naming convention like *rf.4.6.90* where k=4, i=6, and c=0.9. This makes for some easy parsing of information for comparing/plotting changes in contig totals/information ratios as shown below.
+### **Goal:** Remove reads that are not from the target organims
 
-Note that for a given `<outputFile>` name, **2** files are generated - 1 with no file suffix (contigs only in fasta format) and 1 with .clstr suffix (with information on within contig cluster similarity).
+1. Create a clean\_data folder inside KRLA folder:
+	
+	```sh
+	mkdir clean_data
+	```
+	
+2. Copy the sequencing results to your clean\_data folder:
 
-For reference, a cd-hit of c=0.9 typically takes 5-10 minutes over 32 CPUs, with lower c-values being slower, and higher being faster...
+	```sh
+	cd clean_data
+	cp /archive/parchman_lab/rawdata_to_backup/KRLA/KRLA_S1_L001_R1_001.fastq.gz .
+	```
+	
+3. Decompress the file with:
+
+	```sh
+	gunzip KRLA_S1_L001_R1_001.fastq.gz
+	```
+
+4. Count the reads **before** cleaning with:
+
+	```sh
+	$ nohup grep -c "^@" KRLA_S1_L001_R1_001.fastq > KRLA_number_of_rawreads.txt &
+	```
+	
+	* `nohup` (no hang up) allows the command to keep running, even if you close the terminal, lose connection with the server, or log out.
+	* `&` allows the command to run in the background.
+	* `grep -c` will count the number of occurances of the pattern ("^@") in the file (KRLA_S1_L001_R1_001.fastq).
+	* the result file (KRLA_number_of_rawreads.txt) will contain the initial number of reads 
+	* **Reads before cleaning:** n
+
+5. Run the cleaning script (note: the script will need to be edited to change the paths to the appropriate files):
+
+	```sh
+	cp path/to/cleaning/script.sh .
+	nano cleaning_bash_KRLA.sh
+	conda deactivate
+	module load fqutils/0.4.1
+	module load bowtie2/2.2.5
+	bash cleaning_bash_KRLA.sh &
+	```
+	
+	* `module load` is needed to allow access to the modules used in the script
+	* fqutils and bowtie2 are used in the cleaning script
+	* cleaning\_bash\_KRLA.sh uses the tapioca pipeline's contamination analysis script to remove artifacts from:
+		* Illumina oligos
+		* PhiX
+		* *E. coli*
+
+6. Check that KRLA.clean.fastq has been created (from cleaning script), then remove the raw data file (from KRLA/data - a backup is stored at /archive/parchman\_lab/rawdata\_to\_backup/KRLA) :
+
+	```sh
+	ls
+	rm -rf KRLA_S1_L001_R1_001.fastq &
+	```
+	
+7. Count the reads **after** cleaning with:
+
+	```sh
+	nohup cd-hit-est -i k4.i2.seqs -o rf.4.2.92 -M 0 -T 0 -c 0.92 &>/dev/null &
+	```
+
+	```sh
+	nohup grep -c "^@" KRLA.clean.fastq > KRLA_clean_reads.txt &
+	```
+	
+	* reads after cleaning are typically ~75% of reads before cleaning
+	* **Reads after cleaning:** n
+
+## B. Barcode parsing
+
+### **Goal:** Remove barcode and adapter sequences from reads, place this information (what individual the reads came from) in the read ID line
+
+1. Run parsing script:
+
+	```sh
+	cp /working/parchman/KRLA/parse_barcodes769.pl .
+	cp /working/parchman/KRLA/KRLA_barcode_key.csv .
+	nohup perl parse_barcodes769.pl KRLA_barcode_key.csv KRLA.clean.fastq A00 &>/dev/null &
+	```
+	
+	* KRLA\_barcode\_key.csv provides the barcodes for each individual
+	* KRLA.clean.fastq are the clean reads from contaminant cleaning
+	* A00 is the sequencer ID (first 3 characters after @ in the fastq identifier)
+	* &>/dev/null prevents display of stdout
+
+2. View the parsing results (created by the parsing script):
+
+	```sh
+	less parsereport_KRLA.clean.fastq
+	```
+	
+	* results compare good and bad mids (molecular IDs), bad mids are usually <5% of total mids
+	* the other removed results are typically insignificant
+	* **Parse report:**
+		* Good mids count: 1571963061
+		* Bad mids count: 73508410
+		* Number of seqs with potential MSE adapter in seq: 321195
+		* Seqs that were too short after removing MSE and beyond: 428
+
+## C. Splitting fastqs
+
+### **Goal:** Sort the reads that are in the one .fastq file into multiple .fastq files, one for each individual
+
+1. Create an IDs file:
+
+	```sh
+	cut -f 3 -d "," KRLA_barcode_key.csv | grep "_" > KRLA_ids_noheader.txt
+	```
+	
+	* `-f 3` option looks at the 3rd field (column)
+	* `-d ","` option specifies comma as delimiter
+	* `cut` extracts that column and pipes it to `grep`
+	* `grep` ensures the ID column extracted contains an underscore (this removes the header line / label)
+
+2. Split the (cleaned and parsed) fastq files by individual ID:
+
+	```sh
+	cp /working/parchman/KRLA/splitfastqs/splitFastq_universal_regex.pl .
+	nohup perl splitFastq_universal_regex.pl KRLA_ids_noheader.txt parsed_KRLA.clean.fastq &>/dev/null &
+	```
+	
+	* the perl script creates a separate fastq file for each individual's reads
+
+3. Compress all of the resultant fastq files:
+
+	```sh
+	nohup gzip *fastq &>/dev/null &
+	```
+
+# II. Denovo assembly
+
+Denovo assemblies uses your reads to generate a consensus artificial reference to map your reads against. This is the only option in some systems where there is no reference genome available. Sometimes it is still prefered, depending on the genome divergence between your species or population and that of the reference genome. If you are using a reference genome, download the reference and skip this step.
+
+There are many tools available for denovo assembly. We will be using [CD-HIT](https://www.bioinformatics.org/cd-hit/) in a workflow from [dDocent](http://www.ddocent.com/) (Puritz et al. 2014). See [LaCava et al. 2020](https://onlinelibrary.wiley.com/doi/10.1111/1755-0998.13108) for a comparison of tools.
+
+This workflow begins with the gziped .fastq files in KRLA/clean\_data.
+
+## A. Prepare directories and files
+
+1. Create subfolders
+
+	```sh
+	cd ..
+	mkdir fastq
+	mkdir assembly
+	```
+2. Copy cleaned fastq files from KRLA/clean\_data to KRLA/fastq
+
+	```sh
+	cd fastq
+	nohup cp ../clean_data/*.fastq.gz . &> /dev/null &
+	```
+3. Check that all files have been moved correctly
+
+	```sh
+	ls *.fastq.gz -1 | wc -l
+	```
+	* **Number of KRLA individuals:** 497
+
+## B. Generate unique sequence sets
+
+There is no reason to use 100 identical sequences for the denovo clustering task, as it will only increase memory and energy usage and runtime.
+
+1. Make a list of individual IDs from the .fastq.gz files
+
+	```sh
+	ls *.fastq.gz | sed -e 's/.fastq.gz//g' > namelist
+	```
+
+	* `-e` identifies the expression for sed
+	* `'s/.fastq.gz//g'` substitute occurrances of '.fast.gz` with nothing, for all occurances
+
+For each individual, create a file with only the unique reads from that individual (and a count of their occurances). This will speed up future steps.
+
+2. Define variables to use with awk and perl:
+	
+	```sh
+	AWK1='BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}'
+	AWK2='!/>/'
+	PERLT='while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}'
+	```
+	
+	* The first two variables will be used in an awk command. They define the text processing commands that will be applied:
+		* AWK1 defines a command that will look at every chunk of 4 lines (1 read of a fastq file). It will extract/print the first 2 lines of that chunk, and replace the beginning '@' with '>'
+		* AWK2 defines a command that will ignore any lines that don't begin with '>'
+	* The last variable defines a perl script that will be run later
+		* The first portion loops through all the lines and stores/hashes them in `%z`, while incrementing a count for each value (effectively counting the number of times the sequence has occurred within the file)
+		* The second portion iterates through the hash, and prints the count and then the sequence (tab separated)
+
+3. Run the awk and perl commands:
+	
+	```sh
+	nohup cat namelist | parallel --no-notice -j 16 "zcat {}.fastq | mawk '$AWK1' | mawk '$AWK2' | perl -e '$PERLT' > {}.uniq.seqs" &> /dev/null &
+	```
+	
+	* This command gives the individual ID lines to the command (inside the "") run by parallel:
+		* `parallel  --no-notice -j 16` runs the following command in parallel. `-j` is used to specify the number of jobs to run in parallel (32 is currently the max on ponderosa). `--no-notice` disables command line notices generated by `parallel`.
+		* `zcat` is just like `cat` but for compressed files. It combines the individual ID with '.fastq.gz' to identify the file that contains that individual's reads
+		* The following commands apply the awk and perl commands to the file. `mawk` is a version of `awk`, and `perl` runs the perl script.
+		* The combination of commands takes the sequence lines from the .fastq.gz file, counts how many times they occur, and produced a count-sequence file that is saved in a file with the individual ID (stored in {}) with the .uniq.seqs ending
+	* The command uses `nohup` and `&> /dev/null &` as described above
+
+4. Check that you have a uniq.seq file for each fastq.gz file:
+
+	```sh
+	ls *.uniq.seqs -1 | wc -l
+	```
+	
+## C. Assemble from sequence sets
+	
+1. Select a value of i (number of individuals a sequence occurs in) and k (number of times a sequence appears in an individual) to filter your .uniq.seqs files. This will speed up the assembly step.
+
+	* Values are usually between 2 and 10
+	* See note below on how to iteratively repeat steps 4-6 with different parameter values
 
 
-# 3. Mapping reads from all individuals to reference using `bwa`
+2. Generate the collection of sequences that meet your i and k criteria by running the `selectUniqSeqs.sh` script. For example when k=4 and i=2:
+
+	```sh
+	cp /working/romero/scripts/selectContigs.sh .
+	nohup bash selectContigs.sh 4 2 > k4.i2.seqs &
+	```
+	
+	* The file k4.12.seqs will contain only sequences that meet these criteria
+	* selectContigs.sh contents:
+
+		```sh
+		#!/bin/bash
+		
+		parallel --no-notice -j 16 mawk -v x=$1 \''$1 >= x'\' ::: *.uniq.seqs \
+    		| cut -f2 \
+    		| perl -e 'while (<>) {chomp; $z{$_}++;} while(($k,$v) = each(%z)) {print "$v\t$k\n";}' \
+    		| mawk -v x=$2 '$1 >= x' \
+    		| cut -f2 \
+    		| mawk '{c= c + 1; print ">Contig_" c "\n" $1}' \
+    		| sed -e 's/NNNNNNNNNN/\t/g' \
+    		| cut -f1
+		```
+
+3. Use [CD-HIT](https://github.com/weizhongli/cdhit/wiki/3.-User's-Guide#user-content-CDHITEST) to create a denovo assembly from these reads, at a chosen clustering similarity threshold (c).
+	
+	```sh
+	module load cd-hit/4.6
+	```
+	```sh
+	nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.92 &>/dev/null &
+	```
+	
+	* `<inputFile>` is your file from step 5 (k4.i2.seqs)
+	* `<outputFile>` is the filename you want for your output. CD-HIT will generate 2 output files:
+		* 1) outputFile (no extension)
+		* 2) outputFile.clstr
+	* `-M` is max memory allowance, 0 sets it to unlimited, default is 800M
+	* `-T` is max number of threads / CPUs, 0 sets it to unlimited (32), it may be better to set it to ~16 to not take up the entire server
+	* `-c` is the clustering similarity (how similar sequences need to be to be joined together)
+		* 0.95 is usually a good clustering similarity to use, but you should take into account how diverged the populations or species you are studying are
+		* Higher values of c create more contigs and runs faster
+		* Lower values of c create fewer contigs and runs slower
+
+**Note 1:** If you are interested in comparing the results of differnt combinations of i, k, and c parameters effect the resultant number of contigs, you can use the genContigSets.sh script to create kn.in.seqs files for many combinations (each combination of i and k across 2,4,6,8, and 10), and then run each of those files through CD-HIT and compare results. However, it is difficult to interpret the number of contigs (if it is over- or under-assembled).
+
+* If you do compare results from multiple combinations of parameters, it would make sense to set your <outputFile> name to include the i, k, and c parameters (like rf4.2.92 for k = 4, i = 2, and c = 0.92, this will also allow easy detection of assembly files to compare number of contigs)
+* **Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...**
+* To summarize the information from different assemblies:
+	
+	```sh
+	grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
+	less assemblyComparison
+	```
+	
+	* **Will add some code and/or images of plots for these comparisons later**
+
+# 3. Mapping reads from all individuals to reference using `bwa` 
 
 ### 3A. DIRECTORY & FILE PREP
 
@@ -530,7 +632,11 @@ Just an unorganized list for now, will clean up later...
 If generating multiple assemblies, we can summarize the information into a file (here called *assemblyComparison*) via
 
 ```sh
-grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
+grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2", "$3", "$4", "$5}' > assemblyComparison
+```
+
+```sh
+grep "^>" k*seqs -c | awk -F"[:.]" '{print $1", "$2", "$4}' > inputSeqTotals
 ```
 
 *Will add some code and/or images of plots for these comparisons later*
