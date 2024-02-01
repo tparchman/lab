@@ -348,7 +348,13 @@ There is no reason to use 100 identical sequences for the denovo clustering task
 	
 	```sh
 	module load cd-hit/4.6
+<<<<<<< Updated upstream
 	nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.92 &>/dev/null &
+=======
+	```
+	```sh
+	nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.94 &>/dev/null &
+>>>>>>> Stashed changes
 	```
 	
 	* `<inputFile>` is your file from step 5 (k4.i2.seqs)
@@ -362,18 +368,22 @@ There is no reason to use 100 identical sequences for the denovo clustering task
 		* Higher values of c create more contigs and runs faster
 		* Lower values of c create fewer contigs and runs slower
 
-**Note 1:** If you are interested in comparing the results of differnt combinations of i, k, and c parameters effect the resultant number of contigs, you can use the genContigSets.sh script to create kn.in.seqs files for many combinations (each combination of i and k across 2,4,6,8, and 10), and then run each of those files through CD-HIT and compare results. However, it is difficult to interpret the number of contigs (if it is over- or under-assembled).
+4. Use [bwa index](https://bio-bwa.sourceforge.net/bwa.shtml) to index our assembly into FASTA format for mapping individual reads
 
-* If you do compare results from multiple combinations of parameters, it would make sense to set your <outputFile> name to include the i, k, and c parameters (like rf4.2.92 for k = 4, i = 2, and c = 0.92, this will also allow easy detection of assembly files to compare number of contigs)
-* **Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...**
-* To summarize the information from different assemblies:
-	
 	```sh
-	grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
-	less assemblyComparison
+	module load bwa/0.7.17-r1188
 	```
-	
-	* **Will add some code and/or images of plots for these comparisons later**
+	```sh
+	bwa index -p K_lanata rf.4.6.94
+	```
+
+	* `-p` lets us set the prefix name that will be attached to all output assembly files. Use something descriptive of the species you are working on.
+	* `-a` (optional) allows you to choose the BWT construction algorithm
+		* `is` (default) usually faster but limited to databases smaller than 2GB
+		* `bwtsw` for use on large databases (e.g. human genome)
+
+	The result of this step should produce 5 new files named with your chosen prefix and the following extensions: `*.amb`, `*.ann`, `*.bwt`, `.pac`, `*.sa`
+		
 
 **Note 2:** Another option for comparing assembly parameters is.....
 
@@ -385,55 +395,104 @@ There is no reason to use 100 identical sequences for the denovo clustering task
 
 # 3. Mapping reads from all individuals to reference using `bwa`
 
-### 3A. DIRECTORY & FILE PREP
+## A. Directory & file prep
 
-## III. Using bcftools to build cigar formatted mpileup
+1. Make a new directory from the species base (e.g. `.../KRLA/`) called `bwa` and go into it
+
+	```sh
+	mkdir bwa
+	```
+	```sh
+	cd bwa
+	```
+
+2. Move **indexed** assembly files into bwa directory. In this case these all have the prefix **"K_lanata"** based on the prior step.
+
+	```sh
+	cp ../assembly/K_lanata* .
+	```
+## B. Map reads from individuals to reference then sort and index us
+
+1. Load both `bwa` and `samtools` which are required for running the mapping script
+
+	```sh
+	module load bwa/0.7.17-r1188
+	```
+	```sh
+	module load samtools/1.10
+	```
+
+2. Run the script `bwa_mem2sorted_bam.sh` using the following nohup settings
+
+	```sh
+	nohup bash ../scripts/bwa_mem2sorted_bam.sh 2> /dev/null &
+	```
+
+	Running the script in this way prevents the process from being interrupted (i.e. you can disconnect from the server while this runs) while also capturing progress print statements in `nohup.out`. You can re-login to the server and check the progress of mapping by going into the `bwa` directory and entering the following:
+
+	```sh
+	tail -n 1 nohup.out
+	```
+
+	For an idea of time, this step took **~6 hours** using **24 nodes** on ponderosa for **497 individuals** in the KRLA dataset.
+
+### Explanation of `bwa_mem2sorted_bam.sh`
+
+The contents of the previous script is the following:
+
+```sh
+#!/bin/bash
+
+ctr=1
+fTotal=$(ls ../fastq/*.gz -1 | wc -l)
+
+for file in ../fastq/*.gz
+	do
+	if test -f "$file"
+	then
+    	fPrefix=$(echo "$file" | sed 's|.*/||' | cut -f1 -d ".")
+    	echo mapping and sorting individual "$ctr" of "$fTotal"
+    	bwa mem -t 24 K_lanata "$file" | \
+    	samtools view -u -b - | \
+    	samtools sort -l0 -@24 -o "$fPrefix.sorted.bam"
+    	((ctr++))
+	fi
+done
+for sBam in *.sorted.bam
+	do
+	if test -f "$sBam"
+	then
+    	samtools index -@24 "$sBam"
+	fi
+done
+```
+We should explain the steps that are happening here particularly any settings used with
+
+* `bwa mem` - *what this step does generally*
+	* `-t`
+* `samtools view` - *what this step does generally*
+	* `-u`
+	* `-b`
+* `samtools sort` - *what this step does generally*
+	* `-l`
+	* `-@`
+* `samtools index` - *what this step does generally*
+	* `-@`
+
+## 4. Using bcftools to build cigar formatted mpileup *(change this title?)*
+
+```sh
+mkdir vcf
+```
+
+```sh
+find /home/romero/me/KRLA/ -type f -name *.sorted.bam > bam_list.txt
+```
 
 ## IV. Estimating genotype likelihoods with SAMtools
 
 ## V. Filtering variants with VCFtools
 
-## VI. Entropy
----
----
-BELOW IS EXAMPLE OF TWO APPROACHES OF ALIGNING TO REFERENCE GENOME:
-## Alignment to *T. cristinae* genome and variant calling.
-New versions of software installed on ponderosa, with modules:
-- bwa 0.7.17-r1188 (https://github.com/lh3/bwa/releases)
-- bcftools 1.9 (under https://sourceforge.net/projects/samtools/files/samtools/1.9/)
-- samtools 1.10 (under https://sourceforge.net/projects/samtools/files/samtools/1.10/)
-
-## 1) Working with T. cristinae reference genome
-located at:
-    ponderosa:/working/parchman/tpodura/raw_ind_fastqs/
-    
-## 2) reference based assembly with `bwa 0.7.17-r1188`
-
-`NOTE`: Moving forward with 598 individuals
-
-Make index for `bwa`
-
-    $ module load bwa/0.7.17-r1188
-    $ bwa index -p cristinae -a bwtsw re_mod_map_timema_06Jun2016_RvNkF702.fasta &
-
-
-`bwa` wrapper, runbwa_memTLP.pl, modified to run the `mem` algorithim (rather than aln and samse), and used bwa 0.7.17-r1188. Parameter settings are described within the wrapper, more info with `bwa mem`
-
-    $ module load bwa/0.7.17-r1188
-    $ perl runbwa_memTLP.pl  *fastq &
-
-## 3) Sorting, indexing, and converting `sam` files to `bam`
-
-Number of threads set in script, based on current server usage.
-
-    $ module load samtools/1.10
-    $ perl sam2bamV1.10.pl *.sam
-
-
-Cleaning up the directory
-    
-    $ rm *.sam
-    $ rm *.sai
 
 ## 4. Making pileup (bcf) and variant calling with `bcftools 1.9`
 tpod_bams is a text file with all of the **sorted** bam files listed, one per line
@@ -657,3 +716,17 @@ grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyCo
     + useful for testing pararmeters of parallelization and getting idea of how long different tasks in pipeline take
 + `du -sch <files/dir/etc.> | tail -n 1` - way to see how much disk space a set of files is using, useful if a lot of temporary/intermediate files are being generated
 + `htop` - monitor status of jobs and CPU usage (just google for details)
+
+
+**Note 1:** If you are interested in comparing the results of differnt combinations of i, k, and c parameters effect the resultant number of contigs, you can use the genContigSets.sh script to create kn.in.seqs files for many combinations (each combination of i and k across 2,4,6,8, and 10), and then run each of those files through CD-HIT and compare results. However, it is difficult to interpret the number of contigs (if it is over- or under-assembled).
+
+* If you do compare results from multiple combinations of parameters, it would make sense to set your <outputFile> name to include the i, k, and c parameters (like rf4.2.92 for k = 4, i = 2, and c = 0.92, this will also allow easy detection of assembly files to compare number of contigs)
+* **Will add information later on a script that parallelizes multiple cd-hit assemblies for comparison...**
+* To summarize the information from different assemblies:
+	
+	```sh
+	grep "^>" rf*[0-9] -c | awk -F"[:.]" '{print $2"\t"$3"\t"$4"\t"$5}' > assemblyComparison
+	less assemblyComparison
+	```
+	
+	* **Will add some code and/or images of plots for these comparisons later**
