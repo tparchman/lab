@@ -37,13 +37,18 @@ Will add to as needed. Just getting a basic structure started here.
 
 ```mermaid
 flowchart TD;
-    A(personal directory <br> /working/romero/) --> B(species folder <br> /romero/KRLA)
+    A(personal directory <br> /working/romero/) --> B(species folder <br> /romero/KRLA/)
     B --> C(assembly)
-    B --> D(fastq)
-    B --> E(bwa)
-    D --> F(fastq files <br> *.fastq.gz)
-    C --> G(seq subset files <br> e.g. k4.i2.seqs)
-    C --> H(assembly files <br> e.g. rf.4.2.92) 
+    B --> D(bwa)
+    B --> E(fastq)
+    B --> F(scripts)
+    E --> G(fastq files <br> e.g. *.fastq.gz)
+    C --> H(de novo assembly <br> e.g. rf.*)
+    C --> I(indexed assembly files <br> e.g. *.amb, *.ann, *.bwt, *.pac, *.sa)
+    C --> J(alt_assemblies <br> OPTIONAL)
+    J --> K(seq subset files <br> e.g. k4.i2.seqs)
+    J --> L(assembly files <br> e.g. rf.4.2.92)
+    D --> M(mapped/sorted reads <br> + index files <br> e.g. *.bam and *.bam.bai)
 ```
 
 # GBS Workflow Table of Contents
@@ -157,10 +162,9 @@ nohup bash /working/romero/scripts/selectContigs.sh 4 2 > ../assembly/k4.i2.seqs
 	
 7. Count the reads **after** cleaning with:
 
-
-```sh
-nohup cd-hit-est -i k4.i2.seqs -o rf.4.2.92 -M 0 -T 0 -c 0.92 &>/dev/null &
-```
+	```sh
+	nohup cd-hit-est -i k4.i2.seqs -o rf.4.2.92 -M 0 -T 0 -c 0.92 &>/dev/null &
+	```
 
 	```sh
 	nohup grep -c "^@" KRLA.clean.fastq > KRLA_clean_reads.txt &
@@ -348,13 +352,10 @@ There is no reason to use 100 identical sequences for the denovo clustering task
 	
 	```sh
 	module load cd-hit/4.6
-<<<<<<< Updated upstream
-	nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.92 &>/dev/null &
-=======
 	```
+
 	```sh
 	nohup cd-hit-est -i <inputFile> -o <outputFile> -M 0 -T 0 -c 0.94 &>/dev/null &
->>>>>>> Stashed changes
 	```
 	
 	* `<inputFile>` is your file from step 5 (k4.i2.seqs)
@@ -489,13 +490,22 @@ mkdir vcf
 find /home/romero/me/KRLA/ -type f -name *.sorted.bam > bam_list.txt
 ```
 
-## IV. Estimating genotype likelihoods with SAMtools
-
-## V. Filtering variants with VCFtools
-
-
 ## 4. Making pileup (bcf) and variant calling with `bcftools 1.9`
-tpod_bams is a text file with all of the **sorted** bam files listed, one per line
+
+Here is an example from Lainie that uses `bcftools 1.3`.
+
+The following takes several (2-4) hours. NOTE: Run the following lines as one large chunk of code. Be sure to change reference name and output file.
+```sh
+$ samtools mpileup -P ILLUMINA --BCF --max-depth 130 --adjust-MQ 50 --min-BQ 20 --min-MQ 20 --skip-indels --output-tags DP,AD --fasta-ref K_lanata.fa *sorted.bam | \
+    bcftools call -m --variants-only --format-fields GQ --skip-variants indels | \
+    bcftools filter --set-GTs . -i 'QUAL > 19 && FMT/GQ >9' | \
+    bcftools view -m 2 -M 2 -v snps --apply-filter "PASS" --output-type v --output-file variants_rawfiltered_1FEB2024.vcf &
+```
+
+Alternatively, we could use `bcftools 1.9` and run the following:
+
+    $ module load bcftools/1.9
+    $ bcftools mpileup -C 50 -d 250 -f K_lanata.fa -q 30 -Q 20 -I -b bam_list.txt -O b -o K_lanata.bcf
 
 Options used:
 
@@ -519,8 +529,6 @@ Options used:
 -o --output FILE       write output to FILE [standard output]
 
 
-    $ module load bcftools/1.9
-    $ bcftools mpileup -C 50 -d 250 -f re_mod_map_timema_06Jun2016_RvNkF702.fasta -q 30 -Q 20 -I -b tpod_bams -O b -o tpod.bcf
 
 ## 5. Generation vcf file from bcf.
 Options used:
@@ -547,7 +555,34 @@ Checking number of SNPs:
 After filtering, kept 598 out of 598 Individuals
 After filtering, kept 127722 out of a possible 127722 Sites
 
-## 5. Filtering
+## 6. Filtering
+
+### Things we filter on:
+
+#### Individuals:
+
++ **Coverage:** Also can be thought of as depth.See 3mapping. Calculated on bam files. Average read count per locus per individual.
+
++ **Missing:** Proportion of missing data allowed across all loci for individual. Common and high in GBS/RADseq data. Kinda an issue all around. Many methods, including PCA (all ordination methods), require a complete matrix with no missing data. Additionally, PCA will cluster by missing data with individuals with higher missing data clustering closer to the center and get this "fan" effect. Can be the same for coverage too. This (among other reasons) is why people use a variance-covariance matrix of genetic data to do ordinations. Other methods involve imputation. This can be fancy and use phased haplotype data OR simply, when you z-score, (g - mean(g))/sd(g), your genotype data across each locus, you make all missing data equal to 0 or Mean (i.e., the global allele frequency). There's more to this standardization, see Patterson et al. 2006 (https://dx.plos.org/10.1371/journal.pgen.0020190) for more info. See PCAsim_ex in examples directory for showing all these issues.
+(additional) This is another reason to use entropy. Entropy is a hierarchical bayesian model so it gets an updated genotype estimate for each missing value based on genotype likelihoods across loci, individuals, and the allele frequency of the cluster/deme that individual assigns to.
+
+### Loci:
+
++ **Biallelic:** Only keep biallelic SNPs. Multiallelic SNPs are rare at the time scale we work (Citation??) and also, mathematical nightmare and we have enough data so just ignore. Everyone does unless deep time phylogenetics.
+
++ **thin:** Keeps one locus within a specified range. Not 100% how it decides with one to keep. I think it's on quality or depth. This is a necessary step as loci in close physical are prone to sequencing error and linkage disequalibrium (LD) confounds many different population genetic parameters. For de novo reference assemblies, we thin to 100 as contigs/reads are ~92 bp in length. This keeps one locus per contig to control for LD and sequencing error, which is really common in pop gen and necessary for many analyses.
+
++ **max-missing** = max proportion of missing data per locus
+
++ **MAF** = minor allele frequency. Proportion of individuals a alternate allele needs to be present in order for that locus to be kept as a SNP. (e.g. maf = 0.02 for 250 individuals means that an alternate allele needs to be present in at least 5 individuals to be kept) Many papers have shown this is a big issue in clustering and demography (Citation). We do this a second time near the end if we removed individuals during missing data filtering.
+
++ **Mean Depth:** Average allelic depth or read depth per locus. Too low could be sequencing error, too high could be PCR replication artifact (Citation).
+
++ **Qual:** Locus Quality. You can look up the math. Usually above 20-30 is good but given our coverage and number of individuals, we can usually go way higher.
+
++ **Fis:** Inbreeding coefficient. This is a contentous topic. This has to do with paralogs or paralogous loci. This is where loci map to multiple regions of the genome. Issues in highly repeative genomes. Usually leads to an excess of heterozygotes. Filtering on negative Fis can help. See these two McKinney papers (https://onlinelibrary.wiley.com/doi/10.1111/1755-0998.12763, https://onlinelibrary.wiley.com/doi/abs/10.1111/1755-0998.12613). Katie and others in the lab use his package called HDPlot to deal with this.
+
+#### Tom's code chunks below, reorganize later..
 
 Just doing some rough preliminary stuff here, need to consider how ZG recommends filtering based on what was done above, and how he has been doing things with Timema for mapping.
 
@@ -573,6 +608,8 @@ After filtering, kept 598 out of 598 Individuals, 18640 out of a possible 127722
 
 After filtering, kept 598 out of 598 Individuals, kept 19384 out of a possible 127722 Sites
 
+
+# Disorganized chunks below...
 
 ## Due to missing 702.1 in *T. cristinae* genome, now trying alignment to *T. podura* consensus genome and variant calling.
 
@@ -664,6 +701,8 @@ After filtering, kept 598 out of 598 Individuals
 After filtering, kept 127722 out of a possible 127722 Sites
 
 ## 10. Filtering
+
+
 
 Just doing some rough preliminary stuff here, need to consider how ZG recommends filtering based on what was done above, and how he has been doing things with Timema for mapping.
 
