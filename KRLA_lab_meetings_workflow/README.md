@@ -13,9 +13,7 @@ See [Nielsen et al. 2011](./papers/Nielsen_etal_2011.pdf) and [Buerkle and Gompe
 * insert plate map and ID file path in DNA extractions
 * add upstream path of mastermix cocktail file
 * fill in number of reads before and after cleaning
-* add select_seq to the directory structure (same level as assembly)
 * Add explanation of selectContigs.sh parts
-* explain bwa_mem2sorted_bam
 * Add estimated run times for each step
 
 ## Table of Contents
@@ -73,6 +71,7 @@ Population sampling was a combined effort throughout 2021 - 2022 with Cathy Sill
 flowchart TD;
     A(personal directory <br> /working/romero/) --> B(species folder <br> /romero/KRLA/)
     B --> C(assembly)
+    B --> N (select_seqs)
     B --> D(bwa)
     B --> E(fastq)
     B --> F(scripts)
@@ -355,6 +354,8 @@ There is no reason to use 100 identical sequences for the denovo clustering task
       | cut -f1
       ```
 
+       * [insert description of what this is doing]
+
 3. Use [CD-HIT](https://github.com/weizhongli/cdhit/wiki/3.-User's-Guide#user-content-CDHITEST) to create a denovo assembly from these reads, at a chosen clustering similarity threshold (c).
 
    ```sh
@@ -449,7 +450,7 @@ There is no reason to use 100 identical sequences for the denovo clustering task
       tail -n 1 nohup.out
       ```
 
-      * This step took **~6 hours** using **24 nodes** on ponderosa for **497 individuals** in the KRLA dataset.
+   * This step took **~6 hours** using **24 nodes** on ponderosa for **497 individuals** in the KRLA dataset.
 
 ### Explanation of `bwa_mem2sorted_bam.sh`
 
@@ -485,15 +486,16 @@ done
 We should explain the steps that are happening here particularly any settings used with
 
 * `bwa mem` - maps sequences to the reference, creating a .sam file
-  * `-t`
+  * `-t` - number of threads used
 * `samtools view` - converts .sam format to .bam format to save space
-  * `-u`
-  * `-b`
+  * `-u` - output uncompressed data
+  * `-b` - output in .bam format
 * `samtools sort` - sorts .bam files by position on the reference
-  * `-l`
-  * `-@`
+  * `-l` - output compression level (l0) = uncompressed
+  * `-@` - number of threads used (@24 = 24 threads)
+  * `-o` - output file name
 * `samtools index` - indexes the .bam file for faster search, creating .bai files
-  * `-@`
+  * `-@` - number of threads used (@24 = 24 threads)
 
 ## Build pileup and variant call with BCFTools
 
@@ -579,7 +581,7 @@ find /bwa/ -type f -name *.sorted.bam > bam_list.txt
 ### Filtering on Individuals
 
 * **Coverage:** Also can be thought of as depth. See 3mapping. Calculated on bam files. Average read count per locus per individual.
-* **Missing:** Proportion of missing data allowed across all loci for individual. Common and high in GBS/RADseq data. Kinda an issue all around. Many methods, including PCA (all ordination methods), require a complete matrix with no missing data. Additionally, PCA will cluster by missing data with individuals with higher missing data clustering closer to the center and get this "fan" effect. Can be the same for coverage too. This (among other reasons) is why people use a variance-covariance matrix of genetic data to do ordinations. Other methods involve imputation. This can be fancy and use phased haplotype data OR simply, when you z-score, (g - mean(g))/sd(g), your genotype data across each locus, you make all missing data equal to 0 or Mean (i.e., the global allele frequency). There's more to this standardization, see [Patterson et al. 2006](https://dx.plos.org/10.1371/journal.pgen.0020190) for more info. See PCAsim_ex in examples directory for showing all these issues.This is another reason to use entropy. Entropy is a hierarchical bayesian model so it gets an updated genotype estimate for each missing value based on genotype likelihoods across loci, individuals, and the allele frequency of the cluster/deme that individual assigns to.
+* **Missing:** Proportion of missing data allowed across all loci for individual. Common and high in GBS/RADseq data. Kinda an issue all around. Many methods, including PCA (all ordination methods), require a complete matrix with no missing data. Additionally, PCA will cluster by missing data with individuals with higher missing data clustering closer to the center and get this "fan" effect. Can be the same for coverage too. This (among other reasons) is why people use a variance-covariance matrix of genetic data to do ordinations. Other methods involve imputation. This can be fancy and use phased haplotype data OR simply, when you z-score, (g - mean(g))/sd(g), your genotype data across each locus, you make all missing data equal to 0 or Mean (i.e., the global allele frequency). There's more to this standardization, see [Patterson et al. 2006](https://dx.plos.org/10.1371/journal.pgen.0020190) for more info. See PCAsim_ex in examples directory for showing all these issues. This is another reason to use entropy. Entropy is a hierarchical bayesian model so it gets an updated genotype estimate for each missing value based on genotype likelihoods across loci, individuals, and the allele frequency of the cluster/deme that individual assigns to.
 
 ### Filtering on Loci
 
