@@ -527,12 +527,51 @@ find /bwa/ -type f -name *.sorted.bam > bam_list.txt
       bcftools view -m 2 -M 2 -v snps --apply-filter "PASS" --output-type v  --output-file variants_rawfiltered_1FEB2024.vcf &
       ```
 
+<<<<<<< Updated upstream
 2. Option 2 using `bcftools 1.9`:
 
    ```sh
    module load bcftools/1.9
    bcftools mpileup -C 50 -d 250 -f K_lanata.fa -q 30 -Q 20 -I -b bam_list.txt -O b -o K_lanata.bcf
    ```
+=======
+Alternatively, we could use `bcftools 1.9` and run the following:
+```sh
+module load bcftools/1.9
+```
+
+```sh
+bcftools mpileup -a DP,AD,INFO/AD -C 50 -d 250 -f K_lanata.fa -q 30 -Q 20 -I -b bam_list.txt -o KRLA.bcf
+```
+
+```sh
+bcftools call -v -m -f GQ KRLA.bcf -O z -o KRLA.vcf.gz
+```
+
+```sh
+module load vcftools/0.1.14
+```
+
+```sh
+vcftools \
+--remove-indels \
+--min-alleles 2 \
+--max-alleles 2 \
+--thin 100 \
+--remove-filtered-all \
+--recode \
+--recode-INFO-all \
+--gzvcf KRLA.vcf.gz \
+--out 
+```
+
+```sh
+awk '$5 > 0.5 {print $1}' KRLA.imiss | tail -n +2 > indmiss50.txt
+```
+
+module load bcftools/1.9
+    $ bcftools mpileup -C 50 -d 250 -f K_lanata.fa -q 30 -Q 20 -I -b bam_list.txt -O b -o K_lanata.bcf
+>>>>>>> Stashed changes
 
 ### Understanding bcftools parameters
 
