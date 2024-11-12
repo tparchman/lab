@@ -1,6 +1,6 @@
 # General information on ponderosa and associated resources
 
-This is a group of servers for the Parchman labs private use. We currently have two independent servers, ponderosa and contorta, as well as two storage servers which are mounted with symlinks on ponderosa, where they can be accessed at `/archive` and `/mnt`.
+This is a group of servers for the Parchman labs private use. We currently have three independent servers (ponderosa, contorta, and wallace) , as well as two storage servers which are mounted with symlinks on ponderosa, where they can be accessed at `/backups` and `/mnt`.
 
 The idea for maintaing these servers is to provide an open resource to run and or test code for specific jobs. Now that HPC has improved at UNR, pronghorn will usually be a preferred mechanism for running bigger jobs. However, using ponderosa doesn't require submiting jobs through a queueing system, so at times will be preferred. Because we all use this machine and its associated storage servers, please be sure to monitor what other are doing before starting large or time demanding jobs. The rule of thumb here is to be respectful of your lab mates, and to communicate when necessary.
 
@@ -165,9 +165,9 @@ When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you
 
 Use `sudo` to activate account, set working directory
 
-    $ sudo useradd -m -s /bin/bash -c "Andi Kautt, Parchman Group" -G users,working akautt
+    $ sudo useradd -m -s /bin/bash -c "Jakoby Palma, Parchman Group" -G users,working jpalma
 
-this adds a new user, akaut:
+this adds a new user, jpalma:
 
 - `m` creates home directory and copies files from /etc/skel
 - `s` /bin/bash: makes bash the default shell
@@ -176,17 +176,18 @@ this adds a new user, akaut:
 
 Set passwd:
  
-    $ sudo passwd akautt
+    $ sudo passwd jpalma
+
  
-Set her passwd to G00gle_it (temporary)
+Set the passwd to G00gle_it (temporary)
 
 Age passwork so user will have to change the first time they login
 
-    $ sudo chage -m 10 akautt
+    $ sudo chage -m 10 jpalma
 
 Then to login: 
 
-    $ ssh akautt@ponderosa.biology.unr.edu
+    $ ssh jpalma@ponderosa.biology.unr.edu
     password: G00gle_it (temporary; those are zeros not ones.)
     
     change during first login using:
