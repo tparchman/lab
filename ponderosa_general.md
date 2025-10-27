@@ -4,7 +4,7 @@ This is a group of servers for the Parchman labs private use. We currently have 
 
 The idea for maintaing these servers is to provide an open resource to run and or test code for specific jobs. Now that HPC has improved at UNR, pronghorn will usually be a preferred mechanism for running bigger jobs. However, using ponderosa doesn't require submiting jobs through a queueing system, so at times will be preferred. Because we all use this machine and its associated storage servers, please be sure to monitor what other are doing before starting large or time demanding jobs. The rule of thumb here is to be respectful of your lab mates, and to communicate when necessary.
 
-## General notes on storing data
+## General notes on storing data IGNORE UNTIL UPDATE
 
 `/archive` is 38 TB of disc space in raid5 configuration. Raw sequencing data, and similar data, that needs to be stored long term should be compressed and placed at:
 
@@ -44,7 +44,17 @@ For example, to load bwa/0.7.8
 
 Anytime the system appears to be down, or you can not log in, immediately contact Tom or, if necessary, Mike Zierten. Mike is the College of Science system administrator for research computing, and he helps us keep things stable.
 
-## General useful commands for keeping on top of shit
+
+# Two major rules:
+
+ ## 1. **keep all files compressed** when you are not actively using them
+
+ ## 2. **rm all files that are not absolutely necessary**
+
+
+## General useful commands for keeping on top of things
+See thorough cheat sheet at the bottom for other stuff.
+
 
 To look at disc space (total, avialable, and used):
 
@@ -165,32 +175,172 @@ When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you
 
 Use `sudo` to activate account, set working directory
 
-    $ sudo useradd -m -s /bin/bash -c "Abigail Miller, Parchman Group" -G users,working amiller
+    $ sudo useradd -m -s /bin/bash -c "Angie Lenard, Parchman Group" -G users,working alenard
 
-this adds a new user, eadeyami:
+this adds a new user, alenard:
 
 - `m` creates home directory and copies files from /etc/skel
 - `s` /bin/bash: makes bash the default shell
-- `c` "Abigail Miller, Parchman Group" adds comment to /etc/passwd file
+- `c` "Angie Lenard, Parchman Group" adds comment to /etc/passwd file
 - `G` users, working adds user to secondary group working.
 
 Set passwd:
  
-    $ sudo passwd amiller
+    $ sudo passwd alenard
 
  
 Set the passwd to G00gle_it (temporary)
 
-Age passwork so user will have to change the first time they login
+Age password so user will have to change the first time they login
 
-    $ sudo chage -m 10 amiller
+    $ sudo chage -m 10 alenard
 
 Then to login: 
 
-    $ ssh amiller@ponderosa.biology.unr.edu
+    $ ssh alenard@ponderosa.biology.unr.edu
     password: G00gle_it (temporary; those are zeros not ones.)
     
     change password during first login using:
 
     $ passwd <newpassword>
 
+# Linux Command Cheat Sheet
+
+This cheat sheet summarizes the commands, grouped by topic.
+
+---
+
+## Shell Basics & Navigation
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `pwd` | Print current working directory | `pwd` |
+| `ls` | List files in directory | `ls -F` |
+| `ll` | Long format list (alias for `ls -laF`) | `ll` |
+| `cd` | Change directory | `cd ~/Documents` |
+
+---
+
+## Shell Customization (Zsh/Oh My Zsh)
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `brew install zsh` | Install Zsh on macOS | `brew install zsh` |
+| `sudo apt install zsh` | Install Zsh on Ubuntu | `sudo apt install zsh -y` |
+| `chsh -s $(which zsh)` | Make Zsh the default shell | `chsh -s $(which zsh)` |
+| `alias` | Create shortcut for a command | `alias ll="ls -laF"` |
+| `set -o noclobber` | Prevent overwriting with `>` | `set -o noclobber` |
+
+---
+
+## Package Managers
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `sudo apt update` | Update package list (Ubuntu) | `sudo apt update` |
+| `sudo apt upgrade` | Upgrade installed packages | `sudo apt upgrade` |
+| `sudo apt install <pkg>` | Install a package | `sudo apt install curl` |
+| `brew update` | Update Homebrew package list (macOS) | `brew update` |
+| `brew upgrade` | Upgrade installed brew packages | `brew upgrade` |
+| `brew install <pkg>` | Install a package | `brew install wget` |
+
+---
+
+## File Management
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `cp` | Copy files | `cp file1.txt file2.txt` |
+| `mv` | Move/rename files | `mv old.txt new.txt` |
+| `rm` | Remove files (interactive if aliased) | `rm file.txt` |
+| `rm -rf` | **Dangerous**: force remove recursively | `rm -rf data/` |
+| `rmdir` | Remove empty directory | `rmdir olddir` |
+| `split` | Split file into chunks | `split -l 1000 big.fastq chunk_` |
+| `cat` | Concatenate/display files | `cat chunk_* > combined.fastq` |
+| `head` | Show first *n* lines | `head -n 4000 sample.fastq` |
+| `tail` | Show last *n* lines | `tail -n 100 sample.fastq` |
+
+---
+
+## Text Processing & Pipes
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `grep` | Search by pattern | `grep "chrIII" yeast.gff` |
+| `grep ^@ file` | Match lines starting with `@` | `grep ^@ sample.fastq` |
+| `tr` | Translate/replace characters | `tr 'T' 'U' < seqs.txt` |
+| `sort` | Sort lines | `sort features.txt` |
+| `uniq` | Remove duplicates (after `sort`) | `sort features.txt \| uniq` |
+| `cut` | Extract columns from tab-delimited file | `cut -f3 yeast.gff` |
+| `wc -l` | Count lines | `grep ^@ sample.fastq \| wc -l` |
+| `|` (pipe) | Send output to another command | `ls \| wc -l` |
+| `>` | Redirect output (overwrite) | `echo "hi" > out.txt` |
+| `>>` | Redirect output (append) | `echo "again" >> out.txt` |
+
+---
+
+## Process Control & Job Management
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `top` | Monitor processes in real time | `top` |
+| `htop` | Interactive process monitor | `htop` |
+| `ps` | List your processes | `ps` |
+| `ps aux` | List all processes with details | `ps aux` |
+| `ps aux \| grep <name>` | Find process by name | `ps aux \| grep python` |
+| `pgrep -a <name>` | Find PID(s) by process name | `pgrep -a ping` |
+| `kill <PID>` | Kill process by ID | `kill 12345` |
+| `pkill <name>` | Kill process by name | `pkill yes` |
+| `ctrl c` | Stop a running foreground job | *(keyboard shortcut)* |
+| `ctrl z` | Suspend job | *(keyboard shortcut)* |
+| `bg` | Resume suspended job in background | `bg` |
+| `<cmd> &` | Run job in background | `yes > /dev/null &` |
+| `nohup <cmd> &` | Run job immune to hangups | `nohup ping google.com &` |
+
+---
+
+## Number Generators
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `jot -r N` | Generate N random numbers (macOS) | `jot -r 100` |
+| `seq` | Generate sequences of numbers | `seq 1 10` |
+| `shuf` | Generate random numbers (Linux) | `shuf -i 1-100 -n 10` |
+
+---
+
+## Permissions
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `ls -l` | List files with permissions | `ls -l` |
+| `chmod a+x file.sh` | Make executable | `chmod a+x script.sh` |
+| `chmod a+w file` | Add write permission | `chmod a+w file.txt` |
+
+---
+
+## Remote Access & Transfers
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `ssh user@server` | Log into remote server | `ssh user@hpc.edu` |
+| `sftp user@server` | Transfer files interactively | `sftp user@hpc.edu` |
+| `rsync -av src/ dest/` | Copy/sync directories | `rsync -av data/ backup/` |
+| `rsync -av --delete src/ dest/` | Sync exactly (delete removed files) | `rsync -av --delete data/ backup/` |
+| `rsync -av user@server:/src/ dest/` | Copy from remote server | `rsync -av user@hpc.edu:/scratch data/` |
+| `curl <url> -o file` | Download from URL | `curl "https://.../seq.fasta" -o seq.fasta` |
+| `wget <url>` | Download from URL | `wget https://.../yeast.gff` |
+
+---
+
+## Shell Scripting
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `#!/bin/bash` | Shebang line for bash scripts | *(first line in script)* |
+| `#!/bin/zsh` | Shebang line for zsh scripts | *(first line in script)* |
+| `echo` | Print text to screen | `echo "Hello world"` |
+| `bash script.sh` | Run script with bash | `bash script.sh` |
+| `chmod +x script.sh` | Make script executable | `chmod +x script.sh` |
+| `./script.sh` | Run executable script | `./script.sh` |
+
+---
+
+## Safety Aliases (from our `.zshrc`)
+```zsh
+alias python='python3'
+alias ll='ls -laF'
+alias ls='ls -F'
+alias rm='rm -i'
+alias mv='mv -i'
+alias cp='cp -i'
