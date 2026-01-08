@@ -69,9 +69,8 @@ Population sampling was a combined effort throughout 2021 - 2022 with Cathy Sill
 
 ```mermaid
 flowchart TD;
-    A(personal directory <br> /working/romero/) --> B(species folder <br> /romero/KRLA/)
+    A(**PERSONAL DIRECTORY** <br> /working/romero/) --> B(**SPECIES FOLDER** <br> /romero/KRLA/)
     B --> C(assembly)
-    B --> N (select_seqs)
     B --> D(bwa)
     B --> E(fastq)
     B --> F(scripts)
@@ -454,6 +453,8 @@ There is no reason to use 100 identical sequences for the denovo clustering task
 
 ### Explanation of `bwa_mem2sorted_bam.sh`
 
+## ***THE BELOW SCRIPT SHOULD BE MODIFIED TO TAKE AN ARGUMENT FOR THE ASSEMBLY PREFIX (e.g. 'K_lanata') AND NUMBER OF THREADS (`@` ARGUMENT FOR `SAMTOOLS SORT` AND `@` FOR `SAMTOOLS INDEX`) - ALSO MAYBE SOMETHING FOR FASTQ DIRECTORYq***
+
 The contents of the previous script is the following:
 
 ```sh
@@ -511,7 +512,7 @@ We should explain the steps that are happening here particularly any settings us
 2. Make list of bam files from
 
 ```sh
-find /bwa/ -type f -name *.sorted.bam > bam_list.txt
+ls *.sorted.bam > bam_list.txt
 ```
 
 ### Pileup, call, and filter
@@ -535,13 +536,29 @@ find /bwa/ -type f -name *.sorted.bam > bam_list.txt
    bcftools mpileup -C 50 -d 250 -f K_lanata.fa -q 30 -Q 20 -I -b bam_list.txt -O b -o K_lanata.bcf
    ```
 =======
+
+## ***HAVE BEEN DOING THIS, MOVE ABOVE ELSEWHWERE***
+
 Alternatively, we could use `bcftools 1.9` and run the following:
 ```sh
 module load bcftools/1.9
 ```
 
+If running `mpileup` on more than 1024 individuals, you'll hit an open file limit. Ponderosa hard limit is currently `4096`. Viewable via:
+
 ```sh
-bcftools mpileup -a DP,AD,INFO/AD -C 50 -d 250 -f K_lanata.fa -q 30 -Q 20 -I -b bam_list.txt -o KRLA.bcf
+ulimit -Sn # for the current soft limit
+ulimit -Hn # for the current hard limit
+```
+
+To temporarily adjust soft limit, just run (must be some number under the hard limit):
+
+```sh
+ulimit -n 4096
+```
+
+```sh
+nohup bcftools mpileup -a DP,AD,INFO/AD -C 50 -d 250 -f K_lanata.fa -q 30 -Q 20 -I -b bam_list.txt -o KRLA.bcf 2> mpileup.err &
 ```
 
 ```sh

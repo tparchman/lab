@@ -43,6 +43,8 @@ cp KRLA.01.30.2.15.a70.i40.recode.vcf ./
 This first script would produce a file named `KRLA.01.30.2.15.a70.i40.recode.mpgl` <br>
 These scripts can be found on ponderosa in `/mnt/parchman_lab/tfaske/denovo/src/perl_scripts/`
 
+***NEED TO ADD SOMETHING HERE ABOUT WHEN TO CHANGE THE REGEX FOR IDENTIFYING SAMPLE ID'S IN THE VCF. SEE THE GENERIC PERL SCRIPT HERE AND THE ONE RUN FOR ELEL/ACTH WHERE INDIVIDUALS LIKE `EE_GR_W655333_124.SORTED.BAM` NEED DIFFERENT PATTERN***
+
 ```sh
 perl PATH/vcf2mpgl_universal.pl KRLA.01.30.2.15.a70.i40.recode.vcf
 ```
@@ -64,6 +66,8 @@ library(LEA)
 # change as appropriate
 setwd('PATH')
 ```
+
+***NOTE HERE THE POPULATION REGEX IS NOT ALWAYS CORRECT/GENERIC***
 
 ```r
 makePopId <- function(fileIndv){
@@ -151,7 +155,7 @@ In Trevor's workflow, he runs 5 chains per k-value and averages. For POMA I ran 
 Also, `-r` is only necessary if running different chains of the same k-value at the same time (i.e. you need different seeds to initialize the MCMC). Otherwise the seed is set based on the clock.
 
 ```sh
-entropy -i entropy.mpgl -o entropy_k2_c1.hdf5 -r RANDOMINT?? -n 2 -l 60000 -b 10000 -t 10 -s 50 -e .01 -k 2 -q ldak2.txt -m 1 -w 0
+nohup entropy -i entropy.mpgl -o entropy_k2_c1.hdf5 -r RANDOMINT?? -n 2 -l 60000 -b 10000 -t 10 -s 50 -e .01 -k 2 -q ldak2.txt -m 1 -w 0 > k2.c1.log 2>&1 &
 ```
 
 Using python to work with `estpost`
