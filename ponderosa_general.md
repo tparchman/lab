@@ -14,14 +14,25 @@ We are backing this entire directory up to multiple other destinations, so thing
 
 ## General notes on running jobs
 
-Ponderosa has 32 cores, 512 GB of RAM, and 10TB of local storage. This means read and write operations for working on ponderosa should be faster for data stored locally. For this reason, we use the directory `/working` to store data for active projects. As 10TB is not a big amount of disc space, please keep your directories within `/working` as tidy as possible:
+**Ponderosa** has 32 cores, 512 GB of RAM, and 10TB of local storage. This means read and write operations for working on ponderosa should be faster for data stored locally. For this reason, we use the directory `/working` to store data for active projects. As 10TB is not a big amount of disc space, please keep your directories within `/working` as tidy as possible.
+
+**wallace** has 754 GB of RAM. The system has 43 TB of total storage available across mounted filesystems, with primary data storage located on `/datapool`. It runs on x86_64 architecture with 64 total CPUs (2 sockets × 16 cores × 2 threads) using Intel Xeon Gold 5218 processors at 2.3 GHz. It has a dual-socket, NUMA-aware layout with 2 NUMA nodes and substantial cache resources (44 MB L3 total), supporting efficient parallel workloads. The system includes modern instruction sets (e.g., AVX2, AVX-512) and hardware virtualization (VT-x), with standard mitigations applied for known CPU vulnerabilities.
+
+**contorta**
+
+Housekeeping:
 
 - keep all `.fastq` files compressed whenever they are not being actively used.
 - delete all `.sam` and `.bam` files when you are done processing them. These especially end up taking up enormous amounts of space.
 - constantly monitor the size and content of your directories with:
 ```
-    $ du -h
+    $ du -sh directory/
 ```
+**BACK YOUR WORK UP REGULARLY**
+
+
+
+
 Every user automatically has a home directory located in `~/home/username`
 
 ## Software installs and modules
@@ -171,13 +182,13 @@ When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you
 
 ## For sudo only: setting up user accounts
 
-### Example user add, for Abby Miller
+### Example user add, for Seth
 
 Use `sudo` to activate account, set working directory
 
-    $ sudo useradd -m -s /bin/bash -c "Angie Lenard, Parchman Group" -G users,working alenard
+    $ sudo useradd -m -s /bin/bash -c "Cameron Amos, Parchman Group" -G users,working camos
 
-this adds a new user, alenard:
+this adds a new user, connors:
 
 - `m` creates home directory and copies files from /etc/skel
 - `s` /bin/bash: makes bash the default shell
@@ -186,23 +197,23 @@ this adds a new user, alenard:
 
 Set passwd:
  
-    $ sudo passwd alenard
+    $ sudo passwd camos
 
  
 Set the passwd to G00gle_it (temporary)
 
 Age password so user will have to change the first time they login
 
-    $ sudo chage -m 10 alenard
+    $ sudo chage -m 10 camos
 
 Then to login: 
 
-    $ ssh alenard@ponderosa.biology.unr.edu
+    $ ssh camos@contorta.biology.unr.edu
     password: G00gle_it (temporary; those are zeros not ones.)
     
     change password during first login using:
 
-    $ passwd <newpassword>
+    $ passwd 
 
 # Linux Command Cheat Sheet
 
