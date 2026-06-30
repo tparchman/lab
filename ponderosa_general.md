@@ -1,16 +1,49 @@
 # General information on ponderosa and associated resources
 
-This is a group of servers for the Parchman labs private use. We currently have three independent servers (ponderosa, contorta, and wallace) , as well as two storage servers which are mounted with symlinks on ponderosa, where they can be accessed at `/backups` and `/mnt`.
+This is a group of servers for the Parchman labs private use. We currently have three independent servers (ponderosa, contorta, and wallace). Ponderosa is near end of life, most ongoing work will be done on contorta and wallace for now.
 
-The idea for maintaing these servers is to provide an open resource to run and or test code for specific jobs. Now that HPC has improved at UNR, pronghorn will usually be a preferred mechanism for running bigger jobs. However, using ponderosa doesn't require submiting jobs through a queueing system, so at times will be preferred. Because we all use this machine and its associated storage servers, please be sure to monitor what other are doing before starting large or time demanding jobs. The rule of thumb here is to be respectful of your lab mates, and to communicate when necessary.
+The idea for maintaing these servers is to provide an open resource to run and or test code for specific jobs. Now that HPC has improved at UNR, pronghorn will usually be a preferred mechanism for running bigger jobs in serial. However, using the parchman lab servers doesn't require submiting jobs through a queueing system, so will often be preferred. Because we all use this machine and its associated storage servers, please be sure to monitor what other are doing before starting large or time demanding jobs. The rule of thumb here is to be respectful of your lab mates, and to communicate when necessary.
+   
+## General notes on storing data 
 
-## General notes on storing data IGNORE UNTIL UPDATE
+**All essential data needing long-term storage should ALWAYS be compressed and stored following the "rule of 3": 3 copies with at least one housed in a different location**
 
-`/archive` is 38 TB of disc space in raid5 configuration. Raw sequencing data, and similar data, that needs to be stored long term should be compressed and placed at:
+### Directories and disc locations for storage
+`/datapool/` on wallace has 41 TB of disc space. Preferred primary location for compressed data storage. Long-term essential, compressed data, is archived by parchman and stored in `/datapool/tparchman/rawdata_to_backup/`. 
 
-    /archive/parchman_lab/rawdata_to_backup/
+`/datapool/tparchman/rawdata_to_backup/` is also synced to the `/pedro/` storage server which is mounted on contorta at `/pedro/parchman_lab/rawdata_to_backup/`. 
 
-We are backing this entire directory up to multiple other destinations, so things here should be compact. Generally all files should be gzipped or tar compressed. Please be sure to not have duplicates of these files. As we are generating more and larger sequencing runs, space gets filled up quickly, so we want to be diligent.
+**In progress**: TLP is working on setting up a backup service with backblaze for remote sync and backup of this critical data.
+
+### Good practices for data storage and backup hygiene
+
+Storage is one of our most valuable shared resources. As sequencing projects continue to increase in size, individual projects can easily consume hundreds of gigabytes or more. Good data management conserves disk space, simplifies collaboration, and makes projects easier to reproduce and archive.
+
+#### Compress files whenever possible
+
+Text-based files (FASTQ, FASTA, VCF, BED, GFF, CSV, TSV, etc.) should generally be stored in compressed form using `gzip` or `bgzip` when supported. Collections of completed files can be archived with `tar.gz`. Avoid keeping both compressed and uncompressed versions unless there is a specific reason.
+
+#### Avoid duplicate data
+
+Maintain a single authoritative copy of raw sequencing data and other large files. Do not keep duplicate copies in multiple project directories. When possible, use symbolic links (`ln -s`) to shared reference genomes or other common resources rather than copying them.
+
+#### Organize and clean projects
+
+Use a consistent directory structure (e.g., `raw_data/`, `scripts/`, `results/`, `metadata/`) and periodically remove temporary files, failed analyses, obsolete intermediate outputs, and duplicate downloads. Archive completed projects and retain only files that cannot be easily regenerated.
+
+#### Backup important data
+
+Raw data, metadata, scripts, and final results should always be backed up before deleting or archiving files. The lab servers provide reliable storage, but no storage system should be considered the only copy of valuable data.
+
+#### Monitor your storage usage
+
+Regularly check the amount of space your projects occupy. Useful commands include:
+
+```bash
+du -sh *
+du -sh project_directory
+find . -type f -size +1G
+```
 
 ## General notes on running jobs
 
@@ -18,7 +51,7 @@ We are backing this entire directory up to multiple other destinations, so thing
 
 **wallace** has 754 GB of RAM. The system has 43 TB of total storage available across mounted filesystems, with primary data storage located on `/datapool`. It runs on x86_64 architecture with 64 total CPUs (2 sockets × 16 cores × 2 threads) using Intel Xeon Gold 5218 processors at 2.3 GHz. It has a dual-socket, NUMA-aware layout with 2 NUMA nodes and substantial cache resources (44 MB L3 total), supporting efficient parallel workloads. The system includes modern instruction sets (e.g., AVX2, AVX-512) and hardware virtualization (VT-x), with standard mitigations applied for known CPU vulnerabilities.
 
-**contorta**
+**contorta** has 503 GB of RAM. The system provides approximately 55 TB of total storage across mounted filesystems, with primary data storage located on the `/pedro/` volume (47 TB) while user home directories reside on a dedicated 6.7 TB filesystem. It runs on x86_64 architecture with 36 physical CPU cores (2 sockets × 18 cores × 1 thread) using Intel Xeon E5-2695 v4 processors operating at 2.1 GHz (up to 3.3 GHz turbo). The system has a dual-socket, NUMA-aware architecture with 2 NUMA nodes and 90 MB of shared L3 cache, supporting efficient parallel computational workloads. It includes modern instruction sets such as AVX2, FMA, and AES acceleration, with standard mitigations applied for most known CPU vulnerabilities.
 
 Housekeeping:
 
@@ -29,9 +62,6 @@ Housekeeping:
     $ du -sh directory/
 ```
 **BACK YOUR WORK UP REGULARLY**
-
-
-
 
 Every user automatically has a home directory located in `~/home/username`
 
@@ -186,29 +216,29 @@ When you `ssh` to a remote server, e.g., ssh tparchman@pronghorn.rc.unr.edu, you
 
 Use `sudo` to activate account, set working directory
 
-    $ sudo useradd -m -s /bin/bash -c "Cameron Amos, Parchman Group" -G users,working camos
+    $ sudo useradd -m -s /bin/bash -c "Christian Connors, Parchman Group" -G users,working cconnors
 
 this adds a new user, connors:
 
 - `m` creates home directory and copies files from /etc/skel
 - `s` /bin/bash: makes bash the default shell
-- `c` "Angie Lenard, Parchman Group" adds comment to /etc/passwd file
+- `c` "ebrewer, Parchman Group" adds comment to /etc/passwd file
 - `G` users, working adds user to secondary group working.
 
 Set passwd:
  
-    $ sudo passwd camos
+    $ sudo passwd cconnors
 
  
 Set the passwd to G00gle_it (temporary)
 
 Age password so user will have to change the first time they login
 
-    $ sudo chage -m 10 camos
+    $ sudo chage -m 10 cconnors
 
 Then to login: 
 
-    $ ssh camos@contorta.biology.unr.edu
+    $ ssh cconnors@contorta.biology.unr.edu
     password: G00gle_it (temporary; those are zeros not ones.)
     
     change password during first login using:
