@@ -1,0 +1,156 @@
+---
+title:  |
+  | **Making interactive maps based on GBIF data**
+  | <span style='font-size: 18pt'>*Useful for planning & actively navigating sampling in the field*</span>
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+---
+
+Do the following in R.
+
+```{r, echo=FALSE}
+library(knitr)
+opts_chunk$set(echo = T, message = F, warning = F, fig.width = 10, fig.height = 10, fig.align = 'center',
+               eval = F)
+```
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(rgbif)
+```
+
+A basic function to pull relevant GBIF data. `occ_search` should work better/faster in more recent versions, but you can try `occ_data` if you're having problems. I typically cap it at 20,000 entries because it can get painfully slow otherwise, but change as desired. Depends how common/widespread your taxa of interest is.
+
+Showing an example with winterfat here that has ~8,000 entries. Typically takes 5-10 minutes to complete the request (will scale with however many entries your taxa has).
+
+```{r}
+pullGBIF <- function(taxon){
+  gbifData = occ_search(scientificName = taxon, hasCoordinate = T, limit = 20000)[['data']] %>%
+    select(decimalLatitude, decimalLongitude, basisOfRecord, year, stateProvince) %>%
+    rename(Lat = decimalLatitude,
+           Long = decimalLongitude,
+           Year = year,
+           RecordType = basisOfRecord,
+           State = stateProvince)
+  return(gbifData)
+}
+```
+
+Pull data via the following. Just need to feed it whatever taxa you're looking for.
+
+```{r}
+krla_occ <- pullGBIF('krascheninnikovia lanata')
+```
+
+Depending on what you're trying to sample and where, you could filter these results to things that are more relevant. From my own collections, I found that more recent entries were more useful than old ones (e.g. locations with observations in the 1990s suddenly had whole neighborhoods, solar energy farms, etc. built over them). You could also restrict to certain states or certain types of observations (things from iNat are labeled as `HUMAN_OBSERVATION` and were sometimes more reliable than `PRESERVED_SPECIMEN`).
+
+***ANNOYINGLY, GOOGLE MY MAPS WILL ONLY ALLOW YOU TO LOAD 2,000 POINTS ONTO A MAP AT A TIME (AND WILL ONLY DISPLAY 10,000 ON ONE MAP). IF YOU WANT MORE THAN 2,000 YOU WILL HAVE TO CREATE SEPARATE CSVS AND LOAD THEM INDIVIDUALLY INTO THE MAP. ALTERNATIVELY, YOU COULD CREATE A MAP BASED ON A PARTICULAR REGION OF INTEREST (LIKE JUST THE STATE OF NV, OR WEST OF SOME LATITUDE). YOU COULD ALSO MAKE MULTIPLE MAPS FOR DIFFERENT REGIONS AND USE WHICHEVER ONE YOU'RE CURRENTLY IN AS NEEDED.***
+
+Example of filtering only stuff observed after 2000:
+
+```{r}
+krla_recent <- filter(krla_occ, Year > 1999)
+```
+
+Example of filtering only stuff in Nevada and California:
+
+```{r}
+states <- c('California', 'Nevada')
+
+krla_2state <- filter(krla_occ, State %in% states)
+```
+
+Example of filtering only stuff that was collected as a preserved specimen:
+
+```{r}
+krla_preserved <- filter(krla_occ, RecordType == 'PRESERVED_SPECIMEN')
+```
+
+When you have the records you want, you just need to write to a .csv that you'll load into Google My Maps. Save it in a place that makes sense to you. I'm going to just make one for all records in the state of Nevada to show one that doesn't hit the 2,000 point limit.
+
+```{r}
+krla_nv <- filter(krla_occ, State == 'Nevada')
+write.csv(x = krla_nv, file = '~/Desktop/krla_nv.csv', row.names = F)
+```
+
+Next go to [Google's My Maps](https://mymaps.google.com). You'll want to login with your google profile so that these maps will sync to your phone.
+
+Click on `CREATE A NEW MAP`.
+
+<p align="center" width="100%">
+    <img width="80%" src="../../../Desktop/screen1.png"> 
+</p>
+
+Click on `Import` and select the csv of locations you just made.
+
+<p align="center" width="100%">
+    <img width="80%" src="../../../Desktop/screen2.png"> 
+</p>
+
+Make sure your Lat and Long columns are selected as your location coordinates.
+
+<p align="center" width="100%">
+    <img width="80%" src="../../../Desktop/screen3.png"> 
+</p>
+
+You can also choose to have one of the columns as the "title" for the point, but not necessary. Might try using `Year` for this, so when you're clicking on points on phone's map, you can quickly see how recent the observation was.
+
+Change the shape/color of your points to whatever you want and change the basemap if you like. There's not a ton of options, but the "point" symbol is the easiest to look at on a phone imo.
+
+Also name your map to something relevant.
+
+<p align="center" width="100%">
+    <img width="80%" src="../../../Desktop/screen4.png"> 
+</p>
+
+**When you go to the point styling options, you can click `More icons` and then `See older icons` to get a large circle that is also useful for this scenario.**
+
+<p align="center" width="100%">
+    <img width="80%" src="../../../Desktop/screen5.png"> 
+</p>
+
+## Now go to your phone
+
+Open up google maps (make sure you're logged in).
+
+Click on where it says `You` (might look different on different phones).
+
+<p align="center" width="100%">
+    <img width="30%" src="../../../Desktop/phone1.png"> 
+</p>
+
+Scroll down until you find `Maps`.
+
+<p align="center" width="100%">
+    <img width="30%" src="../../../Desktop/phone2.png"> 
+</p>
+
+Select the map you just made.
+
+<p align="center" width="100%">
+    <img width="30%" src="../../../Desktop/phone3.png"> 
+</p>
+
+This should then load all your points onto your map view. You can interact with them by zooming in and clicking on them. If you titled your points with **Year** for instance, you can quickly so how recent an observation was when you click on it.
+
+<p align="center" width="100%">
+    <img width="30%" src="../../../Desktop/phone4.png"> 
+</p>
+
+You can also swipe up to see any additional details that are in your csv file.
+
+<p align="center" width="100%">
+    <img width="30%" src="../../../Desktop/phone5.png"> 
+</p>
+
+If you ever need to remove the map, click on the `Layers` icon and select the map that you want to remove.
+
+<p align="center" width="100%">
+    <img width="30%" src="../../../Desktop/phone6.png"> 
+</p>
+
+
+
